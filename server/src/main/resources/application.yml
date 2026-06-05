@@ -1,0 +1,56 @@
+app:
+  version: "@project.version@"
+server:
+  port: 8080
+  servlet:
+    contextPath: /server/api/v1
+  ssl:
+    enabled: true
+    key-store: classpath:certs/keystore/keystore.p12
+    key-store-password: fourletters
+    key-store-type: pkcs12
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  application:
+    name: fourletters-server
+
+  # PostgreSQL Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/FOURLETTERS
+    username: fourletters
+    password: fourletters
+    defaultSchema: FOURLETTERS
+    hikari:
+      pool-name: hikariPool
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+
+  # RabbitMQ Configuration
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+rest:
+  cors:
+    allowedOriginPatterns: "https://localhost"
+  jwt:
+    accessTokenValiditySec: 900
+    refreshTokenValiditySec: 604800
+    issuer: "fourletters"
+    # private/public key paths for JWT signing (required)
+    privateKeyPath: "classpath:certs/jwt/private_key.pem"
+    publicKeyPath: "classpath:certs/jwt/public_key.pem"
+google:
+  clientId: "74177348869-n3k7043tjn1blpaluf67elnsb9ilmtr7.apps.googleusercontent.com"
