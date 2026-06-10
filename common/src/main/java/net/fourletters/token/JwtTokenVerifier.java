@@ -1,32 +1,59 @@
 package net.fourletters.token;
 
-import io.jsonwebtoken.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.security.PublicKey;
 import java.util.List;
 import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
 
 
 public class JwtTokenVerifier {
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenVerifier.class);
     private final String issuer;
-    private final PublicKey publicKey;
+    private final JwtProperties jwtProperties;
+    private PublicKey publicKey;
 
     public JwtTokenVerifier(
             JwtProperties jwtProperties
     ) {
         this.issuer = jwtProperties.getIssuer();
+        this.jwtProperties = jwtProperties;
+
         String publicKeyPath = jwtProperties.getPublicKeyPath();
-        if (publicKeyPath == null || publicKeyPath.isBlank()) {
-            throw new IllegalStateException("rest.jwt.publicKeyPath must be configured for JWT verification");
+        if ((publicKeyPath == null || publicKeyPath.isBlank()) &&
+            (jwtProperties.getPublicKeyUrl() == null || jwtProperties.getPublicKeyUrl().isBlank())) {
+            throw new IllegalStateException("Either rest.jwt.publicKeyPath or rest.jwt.publicKeyUrl must be configured for JWT verification");
         }
-        try {
-            this.publicKey = KeyLoader.loadPublicKey(publicKeyPath);
-        } catch (Exception ex) {
-            throw new IllegalStateException("Failed to load public key for JWT", ex);
+
+        // Eager load if local file is provided, otherwise deferred to lazy load.
+        if (publicKeyPath != null && !publicKeyPath.isBlank()) {
+            try {
+                this.publicKey = KeyLoader.loadPublicKey(publicKeyPath);
+            } catch (Exception ex) {
+                throw new IllegalStateException("Failed to load public key for JWT from path", ex);
+            }
         }
+    }
+
+    private synchronized PublicKey getPublicKey() {
+        if (this.publicKey == null) {
+            String url = jwtProperties.getPublicKeyUrl();
+            if (url == null || url.isBlank()) {
+                throw new IllegalStateException("Neither public key path nor URL is configured.");
+            }
+            try {
+                this.publicKey = KeyLoader.loadPublicKeyFromUrl(url);
+            } catch (Exception ex) {
+                throw new IllegalStateException("Failed to load public key from URL", ex);
+            }
+        }
+        return this.publicKey;
     }
 
     /**
@@ -62,7 +89,7 @@ public class JwtTokenVerifier {
     // Single, readable source of truth for parsing
     private Claims verifyAndGetPayload(String token) throws JwtException {
         return Jwts.parser()
-                .verifyWith(publicKey)
+                .verifyWith(getPublicKey())
                 .requireIssuer(issuer)
                 .build()
                 .parseSignedClaims(token)

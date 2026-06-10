@@ -1,0 +1,32 @@
+app:
+  version: "@project.version@"
+server:
+  port: 8081
+  servlet:
+    contextPath: /hub/api/v1
+  ssl:
+    enabled: true
+    key-store: classpath:certs/keystore/keystore.p12
+    key-store-password: fourletters
+    key-store-type: pkcs12
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  application:
+    name: fourletters-hub
+
+  # RabbitMQ Configuration
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+rest:
+  cors:
+    allowedOriginPatterns: "https://localhost"
+  jwt:
+    issuer: "fourletters"
+    publicKeyUrl: "https://localhost:8081/auth/jwks"

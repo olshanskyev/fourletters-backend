@@ -18,6 +18,7 @@ class JwtTokenCreatorAndVerifierTest {
         JwtProperties properties = new JwtProperties(
                 "fourletters-test",
                 "classpath:certs/test_public_key.pem",
+                null,
                 "classpath:certs/test_private_key.pem",
                 3600,
                 604800
@@ -91,6 +92,7 @@ class JwtTokenCreatorAndVerifierTest {
         JwtProperties expiredProps = new JwtProperties(
                 "fourletters-test",
                 "classpath:certs/test_public_key.pem",
+                null,
                 "classpath:certs/test_private_key.pem",
                 -10, // negative validity ensures immediate expiration
                 -10
