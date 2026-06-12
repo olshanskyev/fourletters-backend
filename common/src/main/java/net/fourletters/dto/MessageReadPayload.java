@@ -20,78 +20,78 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import net.fourletters.dto.UserResponse;
+import net.fourletters.dto.MessageAcknowledgement;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * AuthResponse
+ * MessageReadPayload
  */
 @JsonPropertyOrder({
-  AuthResponse.JSON_PROPERTY_ACCESS_TOKEN,
-  AuthResponse.JSON_PROPERTY_USER
+  MessageReadPayload.JSON_PROPERTY_EVENT,
+  MessageReadPayload.JSON_PROPERTY_DATA
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-11T13:24:57.506629+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class AuthResponse {
-  public static final String JSON_PROPERTY_ACCESS_TOKEN = "access_token";
+public class MessageReadPayload {
+  public static final String JSON_PROPERTY_EVENT = "event";
   @jakarta.annotation.Nonnull
-  private String accessToken;
+  private String event;
 
-  public static final String JSON_PROPERTY_USER = "user";
+  public static final String JSON_PROPERTY_DATA = "data";
   @jakarta.annotation.Nonnull
-  private UserResponse user;
+  private MessageAcknowledgement data;
 
-  public AuthResponse() {
+  public MessageReadPayload() {
   }
 
-  public AuthResponse accessToken(@jakarta.annotation.Nonnull String accessToken) {
+  public MessageReadPayload event(@jakarta.annotation.Nonnull String event) {
     
-    this.accessToken = accessToken;
+    this.event = event;
     return this;
   }
 
   /**
-   * The short-lived JWT Access Token.
-   * @return accessToken
+   * Get event
+   * @return event
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_ACCESS_TOKEN, required = true)
+  @JsonProperty(value = JSON_PROPERTY_EVENT, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public String getAccessToken() {
-    return accessToken;
+  public String getEvent() {
+    return event;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_ACCESS_TOKEN, required = true)
+  @JsonProperty(value = JSON_PROPERTY_EVENT, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setAccessToken(@jakarta.annotation.Nonnull String accessToken) {
-    this.accessToken = accessToken;
+  public void setEvent(@jakarta.annotation.Nonnull String event) {
+    this.event = event;
   }
 
-  public AuthResponse user(@jakarta.annotation.Nonnull UserResponse user) {
+  public MessageReadPayload data(@jakarta.annotation.Nonnull MessageAcknowledgement data) {
     
-    this.user = user;
+    this.data = data;
     return this;
   }
 
   /**
-   * Get user
-   * @return user
+   * Get data
+   * @return data
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_USER, required = true)
+  @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public UserResponse getUser() {
-    return user;
+  public MessageAcknowledgement getData() {
+    return data;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_USER, required = true)
+  @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setUser(@jakarta.annotation.Nonnull UserResponse user) {
-    this.user = user;
+  public void setData(@jakarta.annotation.Nonnull MessageAcknowledgement data) {
+    this.data = data;
   }
 
 
@@ -103,22 +103,22 @@ public class AuthResponse {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AuthResponse authResponse = (AuthResponse) o;
-    return Objects.equals(this.accessToken, authResponse.accessToken) &&
-        Objects.equals(this.user, authResponse.user);
+    MessageReadPayload messageReadPayload = (MessageReadPayload) o;
+    return Objects.equals(this.event, messageReadPayload.event) &&
+        Objects.equals(this.data, messageReadPayload.data);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(accessToken, user);
+    return Objects.hash(event, data);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class AuthResponse {\n");
-    sb.append("    accessToken: ").append(toIndentedString(accessToken)).append("\n");
-    sb.append("    user: ").append(toIndentedString(user)).append("\n");
+    sb.append("class MessageReadPayload {\n");
+    sb.append("    event: ").append(toIndentedString(event)).append("\n");
+    sb.append("    data: ").append(toIndentedString(data)).append("\n");
     sb.append("}");
     return sb.toString();
   }

@@ -1,9 +1,15 @@
 package net.fourletters.token;
 
 import io.jsonwebtoken.Claims;
+import net.fourletters.configuration.JwtProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.web.client.RestTemplate;
 
+import java.security.PublicKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Base64;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -14,7 +20,8 @@ class JwtTokenCreatorAndVerifierTest {
     private JwtTokenVerifier verifier;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() throws Exception {
+        // Initialize properties
         JwtProperties properties = new JwtProperties(
                 "fourletters-test",
                 "classpath:certs/test_public_key.pem",
@@ -23,8 +30,12 @@ class JwtTokenCreatorAndVerifierTest {
                 3600,
                 604800
         );
+
+        // Initialize verifier (null for RestTemplate since we use file path)
+        verifier = new JwtTokenVerifier(properties, null);
+
+        // Initialize creator
         creator = new JwtTokenCreator(properties);
-        verifier = new JwtTokenVerifier(properties);
     }
 
     @Test
@@ -109,5 +120,55 @@ class JwtTokenCreatorAndVerifierTest {
         Claims extractedClaims = ignoredExpClaimsOpt.orElseThrow();
         assertEquals("testuser", extractedClaims.getSubject());
         assertEquals("session-expired", extractedClaims.getId());
+    }
+
+    @Test
+    void testLoadPublicKeyFromUrl() throws Exception {
+        // 1. Prepare JWKS JSON mapping to our test public key
+        PublicKey pubKey = KeyLoader.loadPublicKey("classpath:certs/test_public_key.pem");
+        RSAPublicKey rsaPubKey = (RSAPublicKey) pubKey;
+
+        // Remove leading zero sign-byte typically added by BigInteger two's complement representation
+        byte[] nBytes = rsaPubKey.getModulus().toByteArray();
+        if (nBytes[0] == 0) {
+            byte[] tmp = new byte[nBytes.length - 1];
+            System.arraycopy(nBytes, 1, tmp, 0, tmp.length);
+            nBytes = tmp;
+        }
+
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        String nStr = encoder.encodeToString(nBytes);
+        String eStr = encoder.encodeToString(rsaPubKey.getPublicExponent().toByteArray());
+
+        String jwksJson = "{\"keys\":[{\"kty\":\"RSA\",\"n\":\"" + nStr + "\",\"e\":\"" + eStr + "\"}]}";
+
+        // 2. Mock RestTemplate to simulate HTTP response
+        RestTemplate restTemplate = Mockito.mock(RestTemplate.class);
+        Mockito.when(restTemplate.getForObject("http://localhost/jwks", String.class)).thenReturn(jwksJson);
+
+        // 3. Configure properties with URL only, path is left blank
+        JwtProperties urlProps = new JwtProperties(
+                "fourletters-test",
+                "",
+                "http://localhost/jwks",
+                "classpath:certs/test_private_key.pem",
+                3600,
+                604800
+        );
+
+        // 4. Initialize verifier and test
+        JwtTokenVerifier urlVerifier = new JwtTokenVerifier(urlProps, restTemplate);
+
+        // Create a valid token using the existing file-backed creator
+        JwtTokenCreator.TokenDetails tokenDetails = creator.generateAccessToken("urltestuser", new String[]{"USER"}, "session-url");
+
+        // The verifier should lazily try to fetch the key from the mocked RestTemplate
+        Optional<Claims> claimsOpt = urlVerifier.parseClaims(tokenDetails.token());
+
+        assertTrue(claimsOpt.isPresent());
+        assertEquals("urltestuser", claimsOpt.get().getSubject());
+
+        // Confirm the RestTemplate was indeed called
+        Mockito.verify(restTemplate).getForObject("http://localhost/jwks", String.class);
     }
 }

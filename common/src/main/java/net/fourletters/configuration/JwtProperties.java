@@ -1,4 +1,4 @@
-package net.fourletters.token;
+package net.fourletters.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;

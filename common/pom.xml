@@ -43,7 +43,7 @@
     <build>
         <plugins>
             <!-- used to generate models from OpenAPI spec, but maintain them manually for better control -->
-            <!--<plugin>
+            <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
                 <version>7.21.0</version>
@@ -74,7 +74,7 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>-->
+            </plugin>
         </plugins>
     </build>
 

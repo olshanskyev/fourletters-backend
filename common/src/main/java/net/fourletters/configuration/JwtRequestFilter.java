@@ -30,6 +30,9 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String jwtToken = JwtTokenVerifier.getTokenFromBearerString(request.getHeader("Authorization"));
+        if (jwtToken == null) {
+            jwtToken = request.getParameter("token");
+        }
         if (jwtToken != null) {
             var maybeClaims = jwtTokenVerifier.parseClaims(jwtToken);
             if (maybeClaims.isPresent()) {

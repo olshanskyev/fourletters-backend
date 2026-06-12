@@ -1,8 +1,10 @@
-package net.fourletters.token;
+package net.fourletters.configuration;
 
-import net.fourletters.configuration.JwtRequestFilter;
+import net.fourletters.token.JwtTokenCreator;
+import net.fourletters.token.JwtTokenVerifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -11,8 +13,8 @@ import org.springframework.context.annotation.Configuration;
 public class JwtTokenAutoConfiguration {
 
     @Bean
-    public JwtTokenVerifier jwtTokenVerifier(JwtProperties jwtProperties) {
-        return new JwtTokenVerifier(jwtProperties);
+    public JwtTokenVerifier jwtTokenVerifier(JwtProperties jwtProperties, RestTemplateBuilder builder) {
+        return new JwtTokenVerifier(jwtProperties, builder.build());
     }
 
     @Bean

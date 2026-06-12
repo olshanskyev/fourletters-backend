@@ -4,8 +4,10 @@ import java.security.PublicKey;
 import java.util.List;
 import java.util.Optional;
 
+import net.fourletters.configuration.JwtProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.client.RestTemplate;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -17,13 +19,16 @@ public class JwtTokenVerifier {
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenVerifier.class);
     private final String issuer;
     private final JwtProperties jwtProperties;
+    private final RestTemplate restTemplate;
     private PublicKey publicKey;
 
     public JwtTokenVerifier(
-            JwtProperties jwtProperties
+            JwtProperties jwtProperties,
+            RestTemplate restTemplate
     ) {
         this.issuer = jwtProperties.getIssuer();
         this.jwtProperties = jwtProperties;
+        this.restTemplate = restTemplate != null ? restTemplate : new RestTemplate();
 
         String publicKeyPath = jwtProperties.getPublicKeyPath();
         if ((publicKeyPath == null || publicKeyPath.isBlank()) &&
@@ -48,7 +53,8 @@ public class JwtTokenVerifier {
                 throw new IllegalStateException("Neither public key path nor URL is configured.");
             }
             try {
-                this.publicKey = KeyLoader.loadPublicKeyFromUrl(url);
+                String jwksJson = this.restTemplate.getForObject(url, String.class);
+                this.publicKey = KeyLoader.loadPublicKeyFromJson(jwksJson);
             } catch (Exception ex) {
                 throw new IllegalStateException("Failed to load public key from URL", ex);
             }

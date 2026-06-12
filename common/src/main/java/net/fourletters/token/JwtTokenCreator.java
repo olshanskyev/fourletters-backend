@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.Date;
 
 import io.jsonwebtoken.Jwts;
+import net.fourletters.configuration.JwtProperties;
 
 public class JwtTokenCreator {
 
