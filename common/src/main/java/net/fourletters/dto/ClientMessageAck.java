@@ -25,21 +25,26 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * MessageAcknowledgement
+ * ClientMessageAck
  */
 @JsonPropertyOrder({
-  MessageAcknowledgement.JSON_PROPERTY_MESSAGE_ID
+  ClientMessageAck.JSON_PROPERTY_MESSAGE_ID,
+  ClientMessageAck.JSON_PROPERTY_SENDER_ID
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-11T13:24:57.506629+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class MessageAcknowledgement {
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-15T15:06:19.501604+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+public class ClientMessageAck {
   public static final String JSON_PROPERTY_MESSAGE_ID = "messageId";
   @jakarta.annotation.Nonnull
   private UUID messageId;
 
-  public MessageAcknowledgement() {
+  public static final String JSON_PROPERTY_SENDER_ID = "senderId";
+  @jakarta.annotation.Nonnull
+  private UUID senderId;
+
+  public ClientMessageAck() {
   }
 
-  public MessageAcknowledgement messageId(@jakarta.annotation.Nonnull UUID messageId) {
+  public ClientMessageAck messageId(@jakarta.annotation.Nonnull UUID messageId) {
     
     this.messageId = messageId;
     return this;
@@ -64,6 +69,31 @@ public class MessageAcknowledgement {
     this.messageId = messageId;
   }
 
+  public ClientMessageAck senderId(@jakarta.annotation.Nonnull UUID senderId) {
+    
+    this.senderId = senderId;
+    return this;
+  }
+
+  /**
+   * ID of the user who originally sent the message (used for returning the read receipt)
+   * @return senderId
+   */
+  @jakarta.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_SENDER_ID, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+
+  public UUID getSenderId() {
+    return senderId;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_SENDER_ID, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setSenderId(@jakarta.annotation.Nonnull UUID senderId) {
+    this.senderId = senderId;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -73,20 +103,22 @@ public class MessageAcknowledgement {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    MessageAcknowledgement messageAcknowledgement = (MessageAcknowledgement) o;
-    return Objects.equals(this.messageId, messageAcknowledgement.messageId);
+    ClientMessageAck clientMessageAck = (ClientMessageAck) o;
+    return Objects.equals(this.messageId, clientMessageAck.messageId) &&
+        Objects.equals(this.senderId, clientMessageAck.senderId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(messageId);
+    return Objects.hash(messageId, senderId);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class MessageAcknowledgement {\n");
+    sb.append("class ClientMessageAck {\n");
     sb.append("    messageId: ").append(toIndentedString(messageId)).append("\n");
+    sb.append("    senderId: ").append(toIndentedString(senderId)).append("\n");
     sb.append("}");
     return sb.toString();
   }

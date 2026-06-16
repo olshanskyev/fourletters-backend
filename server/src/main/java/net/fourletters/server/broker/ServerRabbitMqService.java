@@ -14,7 +14,7 @@ public class ServerRabbitMqService extends AbstractRabbitMqConfig {
 
     public ServerRabbitMqService(AmqpAdmin amqpAdmin) {
         // 1. Set up Alternate/DLQ Exchange
-        TopicExchange dlqExchange = new TopicExchange("dlx.exchange");
+        TopicExchange dlqExchange = new TopicExchange(DLX_EXCHANGE);
         amqpAdmin.declareExchange(dlqExchange);
 
         // 2. Ensure Core Routing Exchange exists, configured with Alternate Exchange
@@ -22,24 +22,14 @@ public class ServerRabbitMqService extends AbstractRabbitMqConfig {
                 MESSAGES_EXCHANGE,
                 true,   // durable (survives restarts)
                 false,  // autoDelete
-                Map.of("alternate-exchange", "dlx.exchange") // configure alternate exchange mapping
+                Map.of("alternate-exchange", DLX_EXCHANGE) // configure alternate exchange mapping
         );
         amqpAdmin.declareExchange(messagesExchange);
 
-        // 3. Holding Queue (TTL = 30s)
-        Queue holdingQueue = new Queue("unrouted.holding.queue", true, false, false,
-                Map.of(
-                        "x-message-ttl", 30000, // 30 seconds
-                        "x-dead-letter-exchange", "dlx.exchange",
-                        "x-dead-letter-routing-key", "dlq.dropped"
-                ));
-        amqpAdmin.declareQueue(holdingQueue);
-        amqpAdmin.declareBinding(BindingBuilder.bind(holdingQueue).to(dlqExchange).with(ROUTING_KEY_PREFIX + "*"));
-
-        // 4. Real Dead Letter Queue (Gets messages after 30s TTL expires)
+        // 3. Real Dead Letter Queue (Gets messages after 30s TTL expires)
         Queue offlineMessagesQueue = new Queue("offline.messages.queue", true);
         amqpAdmin.declareQueue(offlineMessagesQueue);
-        amqpAdmin.declareBinding(BindingBuilder.bind(offlineMessagesQueue).to(dlqExchange).with("dlq.dropped"));
+        amqpAdmin.declareBinding(BindingBuilder.bind(offlineMessagesQueue).to(dlqExchange).with(DLQ_DROPPED_ROUTING_KEY));
     }
 }
 

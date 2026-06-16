@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import net.fourletters.dto.MessageAcknowledgement;
+import net.fourletters.dto.ClientMessageAck;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   AckMessagePayload.JSON_PROPERTY_ACTION,
   AckMessagePayload.JSON_PROPERTY_DATA
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-11T13:24:57.506629+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-15T15:06:19.501604+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class AckMessagePayload {
   /**
    * Gets or Sets action
@@ -72,7 +72,7 @@ public class AckMessagePayload {
 
   public static final String JSON_PROPERTY_DATA = "data";
   @jakarta.annotation.Nonnull
-  private MessageAcknowledgement data;
+  private ClientMessageAck data;
 
   public AckMessagePayload() {
   }
@@ -102,7 +102,7 @@ public class AckMessagePayload {
     this.action = action;
   }
 
-  public AckMessagePayload data(@jakarta.annotation.Nonnull MessageAcknowledgement data) {
+  public AckMessagePayload data(@jakarta.annotation.Nonnull ClientMessageAck data) {
     
     this.data = data;
     return this;
@@ -116,14 +116,14 @@ public class AckMessagePayload {
   @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public MessageAcknowledgement getData() {
+  public ClientMessageAck getData() {
     return data;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setData(@jakarta.annotation.Nonnull MessageAcknowledgement data) {
+  public void setData(@jakarta.annotation.Nonnull ClientMessageAck data) {
     this.data = data;
   }
 

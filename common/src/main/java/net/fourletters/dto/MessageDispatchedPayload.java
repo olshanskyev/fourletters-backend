@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import net.fourletters.dto.MessageAcknowledgement;
+import net.fourletters.dto.EventMessageReceipt;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
@@ -31,20 +31,53 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   MessageDispatchedPayload.JSON_PROPERTY_EVENT,
   MessageDispatchedPayload.JSON_PROPERTY_DATA
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-11T13:24:57.506629+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-15T15:06:19.501604+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class MessageDispatchedPayload {
+  /**
+   * Gets or Sets event
+   */
+  public enum EventEnum {
+    MESSAGE_DISPATCHED(String.valueOf("messageDispatched"));
+
+    private String value;
+
+    EventEnum(String value) {
+      this.value = value;
+    }
+
+    @JsonValue
+    public String getValue() {
+      return value;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(value);
+    }
+
+    @JsonCreator
+    public static EventEnum fromValue(String value) {
+      for (EventEnum b : EventEnum.values()) {
+        if (b.value.equals(value)) {
+          return b;
+        }
+      }
+      throw new IllegalArgumentException("Unexpected value '" + value + "'");
+    }
+  }
+
   public static final String JSON_PROPERTY_EVENT = "event";
   @jakarta.annotation.Nonnull
-  private String event;
+  private EventEnum event;
 
   public static final String JSON_PROPERTY_DATA = "data";
   @jakarta.annotation.Nonnull
-  private MessageAcknowledgement data;
+  private EventMessageReceipt data;
 
   public MessageDispatchedPayload() {
   }
 
-  public MessageDispatchedPayload event(@jakarta.annotation.Nonnull String event) {
+  public MessageDispatchedPayload event(@jakarta.annotation.Nonnull EventEnum event) {
     
     this.event = event;
     return this;
@@ -58,18 +91,18 @@ public class MessageDispatchedPayload {
   @JsonProperty(value = JSON_PROPERTY_EVENT, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public String getEvent() {
+  public EventEnum getEvent() {
     return event;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_EVENT, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setEvent(@jakarta.annotation.Nonnull String event) {
+  public void setEvent(@jakarta.annotation.Nonnull EventEnum event) {
     this.event = event;
   }
 
-  public MessageDispatchedPayload data(@jakarta.annotation.Nonnull MessageAcknowledgement data) {
+  public MessageDispatchedPayload data(@jakarta.annotation.Nonnull EventMessageReceipt data) {
     
     this.data = data;
     return this;
@@ -83,14 +116,14 @@ public class MessageDispatchedPayload {
   @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public MessageAcknowledgement getData() {
+  public EventMessageReceipt getData() {
     return data;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setData(@jakarta.annotation.Nonnull MessageAcknowledgement data) {
+  public void setData(@jakarta.annotation.Nonnull EventMessageReceipt data) {
     this.data = data;
   }
 

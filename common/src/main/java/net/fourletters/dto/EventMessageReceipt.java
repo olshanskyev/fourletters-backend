@@ -20,47 +20,48 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * AuthRequest
+ * EventMessageReceipt
  */
 @JsonPropertyOrder({
-  AuthRequest.JSON_PROPERTY_TOKEN
+  EventMessageReceipt.JSON_PROPERTY_MESSAGE_ID
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-15T15:06:19.501604+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class AuthRequest {
-  public static final String JSON_PROPERTY_TOKEN = "token";
+public class EventMessageReceipt {
+  public static final String JSON_PROPERTY_MESSAGE_ID = "messageId";
   @jakarta.annotation.Nonnull
-  private String token;
+  private UUID messageId;
 
-  public AuthRequest() {
+  public EventMessageReceipt() {
   }
 
-  public AuthRequest token(@jakarta.annotation.Nonnull String token) {
+  public EventMessageReceipt messageId(@jakarta.annotation.Nonnull UUID messageId) {
     
-    this.token = token;
+    this.messageId = messageId;
     return this;
   }
 
   /**
-   * The identity token provided by the third-party OAuth provider.
-   * @return token
+   * ID of the outgoing message that triggered the event (dispatch or read)
+   * @return messageId
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_TOKEN, required = true)
+  @JsonProperty(value = JSON_PROPERTY_MESSAGE_ID, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public String getToken() {
-    return token;
+  public UUID getMessageId() {
+    return messageId;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_TOKEN, required = true)
+  @JsonProperty(value = JSON_PROPERTY_MESSAGE_ID, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setToken(@jakarta.annotation.Nonnull String token) {
-    this.token = token;
+  public void setMessageId(@jakarta.annotation.Nonnull UUID messageId) {
+    this.messageId = messageId;
   }
 
 
@@ -72,20 +73,20 @@ public class AuthRequest {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AuthRequest authRequest = (AuthRequest) o;
-    return Objects.equals(this.token, authRequest.token);
+    EventMessageReceipt eventMessageReceipt = (EventMessageReceipt) o;
+    return Objects.equals(this.messageId, eventMessageReceipt.messageId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(token);
+    return Objects.hash(messageId);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class AuthRequest {\n");
-    sb.append("    token: ").append(toIndentedString(token)).append("\n");
+    sb.append("class EventMessageReceipt {\n");
+    sb.append("    messageId: ").append(toIndentedString(messageId)).append("\n");
     sb.append("}");
     return sb.toString();
   }
