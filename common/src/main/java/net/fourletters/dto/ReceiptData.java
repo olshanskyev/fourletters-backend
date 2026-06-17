@@ -25,33 +25,33 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * ClientMessageAck
+ * ReceiptData
  */
 @JsonPropertyOrder({
-  ClientMessageAck.JSON_PROPERTY_MESSAGE_ID,
-  ClientMessageAck.JSON_PROPERTY_SENDER_ID
+  ReceiptData.JSON_PROPERTY_MESSAGE_ID,
+  ReceiptData.JSON_PROPERTY_RECIPIENT_ID
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-15T15:06:19.501604+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class ClientMessageAck {
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-17T14:00:55.009181600+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+public class ReceiptData {
   public static final String JSON_PROPERTY_MESSAGE_ID = "messageId";
   @jakarta.annotation.Nonnull
   private UUID messageId;
 
-  public static final String JSON_PROPERTY_SENDER_ID = "senderId";
+  public static final String JSON_PROPERTY_RECIPIENT_ID = "recipientId";
   @jakarta.annotation.Nonnull
-  private UUID senderId;
+  private UUID recipientId;
 
-  public ClientMessageAck() {
+  public ReceiptData() {
   }
 
-  public ClientMessageAck messageId(@jakarta.annotation.Nonnull UUID messageId) {
+  public ReceiptData messageId(@jakarta.annotation.Nonnull UUID messageId) {
     
     this.messageId = messageId;
     return this;
   }
 
   /**
-   * ID of the message being acknowledged
+   * ID of the original message this receipt refers to.
    * @return messageId
    */
   @jakarta.annotation.Nonnull
@@ -69,29 +69,29 @@ public class ClientMessageAck {
     this.messageId = messageId;
   }
 
-  public ClientMessageAck senderId(@jakarta.annotation.Nonnull UUID senderId) {
+  public ReceiptData recipientId(@jakarta.annotation.Nonnull UUID recipientId) {
     
-    this.senderId = senderId;
+    this.recipientId = recipientId;
     return this;
   }
 
   /**
-   * ID of the user who originally sent the message (used for returning the read receipt)
-   * @return senderId
+   * ID of the user who delivered/read the message (the original recipient).
+   * @return recipientId
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_SENDER_ID, required = true)
+  @JsonProperty(value = JSON_PROPERTY_RECIPIENT_ID, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public UUID getSenderId() {
-    return senderId;
+  public UUID getRecipientId() {
+    return recipientId;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_SENDER_ID, required = true)
+  @JsonProperty(value = JSON_PROPERTY_RECIPIENT_ID, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setSenderId(@jakarta.annotation.Nonnull UUID senderId) {
-    this.senderId = senderId;
+  public void setRecipientId(@jakarta.annotation.Nonnull UUID recipientId) {
+    this.recipientId = recipientId;
   }
 
 
@@ -103,22 +103,22 @@ public class ClientMessageAck {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ClientMessageAck clientMessageAck = (ClientMessageAck) o;
-    return Objects.equals(this.messageId, clientMessageAck.messageId) &&
-        Objects.equals(this.senderId, clientMessageAck.senderId);
+    ReceiptData receiptData = (ReceiptData) o;
+    return Objects.equals(this.messageId, receiptData.messageId) &&
+        Objects.equals(this.recipientId, receiptData.recipientId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(messageId, senderId);
+    return Objects.hash(messageId, recipientId);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class ClientMessageAck {\n");
+    sb.append("class ReceiptData {\n");
     sb.append("    messageId: ").append(toIndentedString(messageId)).append("\n");
-    sb.append("    senderId: ").append(toIndentedString(senderId)).append("\n");
+    sb.append("    recipientId: ").append(toIndentedString(recipientId)).append("\n");
     sb.append("}");
     return sb.toString();
   }

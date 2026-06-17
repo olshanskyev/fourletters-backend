@@ -20,24 +20,26 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import net.fourletters.dto.EncryptedMessage;
+import net.fourletters.dto.ReceiptData;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * ReceiveMessagePayload
+ * WS push: a delivery/read notification relayed live to the original sender.
  */
 @JsonPropertyOrder({
-  ReceiveMessagePayload.JSON_PROPERTY_EVENT,
-  ReceiveMessagePayload.JSON_PROPERTY_DATA
+  ReceiptEvent.JSON_PROPERTY_EVENT,
+  ReceiptEvent.JSON_PROPERTY_DATA
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-15T15:06:19.501604+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class ReceiveMessagePayload {
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-17T14:00:55.009181600+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+public class ReceiptEvent {
   /**
    * Gets or Sets event
    */
   public enum EventEnum {
-    MESSAGE_RECEIVED(String.valueOf("messageReceived"));
+    MESSAGE_DELIVERED(String.valueOf("messageDelivered")),
+    
+    MESSAGE_READ(String.valueOf("messageRead"));
 
     private String value;
 
@@ -72,12 +74,12 @@ public class ReceiveMessagePayload {
 
   public static final String JSON_PROPERTY_DATA = "data";
   @jakarta.annotation.Nonnull
-  private EncryptedMessage data;
+  private ReceiptData data;
 
-  public ReceiveMessagePayload() {
+  public ReceiptEvent() {
   }
 
-  public ReceiveMessagePayload event(@jakarta.annotation.Nonnull EventEnum event) {
+  public ReceiptEvent event(@jakarta.annotation.Nonnull EventEnum event) {
     
     this.event = event;
     return this;
@@ -102,7 +104,7 @@ public class ReceiveMessagePayload {
     this.event = event;
   }
 
-  public ReceiveMessagePayload data(@jakarta.annotation.Nonnull EncryptedMessage data) {
+  public ReceiptEvent data(@jakarta.annotation.Nonnull ReceiptData data) {
     
     this.data = data;
     return this;
@@ -116,14 +118,14 @@ public class ReceiveMessagePayload {
   @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public EncryptedMessage getData() {
+  public ReceiptData getData() {
     return data;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setData(@jakarta.annotation.Nonnull EncryptedMessage data) {
+  public void setData(@jakarta.annotation.Nonnull ReceiptData data) {
     this.data = data;
   }
 
@@ -136,9 +138,9 @@ public class ReceiveMessagePayload {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ReceiveMessagePayload receiveMessagePayload = (ReceiveMessagePayload) o;
-    return Objects.equals(this.event, receiveMessagePayload.event) &&
-        Objects.equals(this.data, receiveMessagePayload.data);
+    ReceiptEvent receiptEvent = (ReceiptEvent) o;
+    return Objects.equals(this.event, receiptEvent.event) &&
+        Objects.equals(this.data, receiptEvent.data);
   }
 
   @Override
@@ -149,7 +151,7 @@ public class ReceiveMessagePayload {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class ReceiveMessagePayload {\n");
+    sb.append("class ReceiptEvent {\n");
     sb.append("    event: ").append(toIndentedString(event)).append("\n");
     sb.append("    data: ").append(toIndentedString(data)).append("\n");
     sb.append("}");

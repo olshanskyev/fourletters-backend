@@ -31,9 +31,10 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   EncryptedMessage.JSON_PROPERTY_MESSAGE_ID,
   EncryptedMessage.JSON_PROPERTY_RECIPIENT_ID,
   EncryptedMessage.JSON_PROPERTY_SENDER_ID,
-  EncryptedMessage.JSON_PROPERTY_PAYLOAD
+  EncryptedMessage.JSON_PROPERTY_PAYLOAD,
+  EncryptedMessage.JSON_PROPERTY_SIGNATURE
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-15T15:06:19.501604+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-17T14:00:55.009181600+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class EncryptedMessage {
   public static final String JSON_PROPERTY_MESSAGE_ID = "messageId";
   @jakarta.annotation.Nonnull
@@ -50,6 +51,10 @@ public class EncryptedMessage {
   public static final String JSON_PROPERTY_PAYLOAD = "payload";
   @jakarta.annotation.Nonnull
   private String payload;
+
+  public static final String JSON_PROPERTY_SIGNATURE = "signature";
+  @jakarta.annotation.Nonnull
+  private String signature;
 
   public EncryptedMessage() {
   }
@@ -111,7 +116,7 @@ public class EncryptedMessage {
   }
 
   /**
-   * ID of the sender user (populated by the Hub before delivery)
+   * ID of the sender user. Set by the Server from the authenticated session at send time; any client-provided value is ignored. Omitted in the send request.
    * @return senderId
    */
   @jakarta.annotation.Nullable
@@ -154,6 +159,31 @@ public class EncryptedMessage {
     this.payload = payload;
   }
 
+  public EncryptedMessage signature(@jakarta.annotation.Nonnull String signature) {
+    
+    this.signature = signature;
+    return this;
+  }
+
+  /**
+   * Detached signature over the payload produced by the sender&#39;s identity key (Base64). Verified end-to-end by the recipient against the public-key directory.
+   * @return signature
+   */
+  @jakarta.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_SIGNATURE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+
+  public String getSignature() {
+    return signature;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_SIGNATURE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setSignature(@jakarta.annotation.Nonnull String signature) {
+    this.signature = signature;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -167,12 +197,13 @@ public class EncryptedMessage {
     return Objects.equals(this.messageId, encryptedMessage.messageId) &&
         Objects.equals(this.recipientId, encryptedMessage.recipientId) &&
         Objects.equals(this.senderId, encryptedMessage.senderId) &&
-        Objects.equals(this.payload, encryptedMessage.payload);
+        Objects.equals(this.payload, encryptedMessage.payload) &&
+        Objects.equals(this.signature, encryptedMessage.signature);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(messageId, recipientId, senderId, payload);
+    return Objects.hash(messageId, recipientId, senderId, payload, signature);
   }
 
   @Override
@@ -183,6 +214,7 @@ public class EncryptedMessage {
     sb.append("    recipientId: ").append(toIndentedString(recipientId)).append("\n");
     sb.append("    senderId: ").append(toIndentedString(senderId)).append("\n");
     sb.append("    payload: ").append(toIndentedString(payload)).append("\n");
+    sb.append("    signature: ").append(toIndentedString(signature)).append("\n");
     sb.append("}");
     return sb.toString();
   }

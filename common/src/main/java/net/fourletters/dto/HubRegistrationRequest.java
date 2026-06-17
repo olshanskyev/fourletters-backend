@@ -24,43 +24,43 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * AuthRequest
+ * Sent by a Hub to the Server on boot to obtain its relay queue. Authentication is via the registration bearer token (a shared secret in Phase 1; a dashboard-issued per-Hub token later). The body itself carries no trust.
  */
 @JsonPropertyOrder({
-  AuthRequest.JSON_PROPERTY_TOKEN
+  HubRegistrationRequest.JSON_PROPERTY_INSTANCE_ID
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-17T14:00:55.009181600+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class AuthRequest {
-  public static final String JSON_PROPERTY_TOKEN = "token";
-  @jakarta.annotation.Nonnull
-  private String token;
+public class HubRegistrationRequest {
+  public static final String JSON_PROPERTY_INSTANCE_ID = "instanceId";
+  @jakarta.annotation.Nullable
+  private String instanceId;
 
-  public AuthRequest() {
+  public HubRegistrationRequest() {
   }
 
-  public AuthRequest token(@jakarta.annotation.Nonnull String token) {
+  public HubRegistrationRequest instanceId(@jakarta.annotation.Nullable String instanceId) {
     
-    this.token = token;
+    this.instanceId = instanceId;
     return this;
   }
 
   /**
-   * The identity token provided by the third-party OAuth provider.
-   * @return token
+   * Optional Hub-chosen instance label reported for diagnostics/dashboard display only. The Server does not derive identity or trust from it; the authoritative hubId is assigned by the Server.
+   * @return instanceId
    */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_TOKEN, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_INSTANCE_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
 
-  public String getToken() {
-    return token;
+  public String getInstanceId() {
+    return instanceId;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_TOKEN, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setToken(@jakarta.annotation.Nonnull String token) {
-    this.token = token;
+  @JsonProperty(value = JSON_PROPERTY_INSTANCE_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setInstanceId(@jakarta.annotation.Nullable String instanceId) {
+    this.instanceId = instanceId;
   }
 
 
@@ -72,20 +72,20 @@ public class AuthRequest {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AuthRequest authRequest = (AuthRequest) o;
-    return Objects.equals(this.token, authRequest.token);
+    HubRegistrationRequest hubRegistrationRequest = (HubRegistrationRequest) o;
+    return Objects.equals(this.instanceId, hubRegistrationRequest.instanceId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(token);
+    return Objects.hash(instanceId);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class AuthRequest {\n");
-    sb.append("    token: ").append(toIndentedString(token)).append("\n");
+    sb.append("class HubRegistrationRequest {\n");
+    sb.append("    instanceId: ").append(toIndentedString(instanceId)).append("\n");
     sb.append("}");
     return sb.toString();
   }

@@ -25,23 +25,23 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * SendMessagePayload
+ * WS push: a new encrypted message relayed live by the Hub.
  */
 @JsonPropertyOrder({
-  SendMessagePayload.JSON_PROPERTY_ACTION,
-  SendMessagePayload.JSON_PROPERTY_DATA
+  MessageEvent.JSON_PROPERTY_EVENT,
+  MessageEvent.JSON_PROPERTY_DATA
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-15T15:06:19.501604+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class SendMessagePayload {
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-17T14:00:55.009181600+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+public class MessageEvent {
   /**
-   * Gets or Sets action
+   * Gets or Sets event
    */
-  public enum ActionEnum {
-    SEND_MESSAGE(String.valueOf("sendMessage"));
+  public enum EventEnum {
+    MESSAGE_RECEIVED(String.valueOf("messageReceived"));
 
     private String value;
 
-    ActionEnum(String value) {
+    EventEnum(String value) {
       this.value = value;
     }
 
@@ -56,8 +56,8 @@ public class SendMessagePayload {
     }
 
     @JsonCreator
-    public static ActionEnum fromValue(String value) {
-      for (ActionEnum b : ActionEnum.values()) {
+    public static EventEnum fromValue(String value) {
+      for (EventEnum b : EventEnum.values()) {
         if (b.value.equals(value)) {
           return b;
         }
@@ -66,43 +66,43 @@ public class SendMessagePayload {
     }
   }
 
-  public static final String JSON_PROPERTY_ACTION = "action";
+  public static final String JSON_PROPERTY_EVENT = "event";
   @jakarta.annotation.Nonnull
-  private ActionEnum action;
+  private EventEnum event;
 
   public static final String JSON_PROPERTY_DATA = "data";
   @jakarta.annotation.Nonnull
   private EncryptedMessage data;
 
-  public SendMessagePayload() {
+  public MessageEvent() {
   }
 
-  public SendMessagePayload action(@jakarta.annotation.Nonnull ActionEnum action) {
+  public MessageEvent event(@jakarta.annotation.Nonnull EventEnum event) {
     
-    this.action = action;
+    this.event = event;
     return this;
   }
 
   /**
-   * Get action
-   * @return action
+   * Get event
+   * @return event
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_ACTION, required = true)
+  @JsonProperty(value = JSON_PROPERTY_EVENT, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public ActionEnum getAction() {
-    return action;
+  public EventEnum getEvent() {
+    return event;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_ACTION, required = true)
+  @JsonProperty(value = JSON_PROPERTY_EVENT, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setAction(@jakarta.annotation.Nonnull ActionEnum action) {
-    this.action = action;
+  public void setEvent(@jakarta.annotation.Nonnull EventEnum event) {
+    this.event = event;
   }
 
-  public SendMessagePayload data(@jakarta.annotation.Nonnull EncryptedMessage data) {
+  public MessageEvent data(@jakarta.annotation.Nonnull EncryptedMessage data) {
     
     this.data = data;
     return this;
@@ -136,21 +136,21 @@ public class SendMessagePayload {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    SendMessagePayload sendMessagePayload = (SendMessagePayload) o;
-    return Objects.equals(this.action, sendMessagePayload.action) &&
-        Objects.equals(this.data, sendMessagePayload.data);
+    MessageEvent messageEvent = (MessageEvent) o;
+    return Objects.equals(this.event, messageEvent.event) &&
+        Objects.equals(this.data, messageEvent.data);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(action, data);
+    return Objects.hash(event, data);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class SendMessagePayload {\n");
-    sb.append("    action: ").append(toIndentedString(action)).append("\n");
+    sb.append("class MessageEvent {\n");
+    sb.append("    event: ").append(toIndentedString(event)).append("\n");
     sb.append("    data: ").append(toIndentedString(data)).append("\n");
     sb.append("}");
     return sb.toString();

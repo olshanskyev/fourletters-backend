@@ -30,3 +30,8 @@ rest:
   jwt:
     issuer: "fourletters"
     publicKeyUrl: "https://localhost:8080/server/api/v1/auth/jwks"
+# Hub registration: on boot the Hub authenticates to the Server with this bearer token.
+hub:
+  registration:
+    url: "https://localhost:8080/server/api/v1/hubs/register"
+    token: "dev-hub-registration-secret"
