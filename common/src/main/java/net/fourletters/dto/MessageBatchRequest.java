@@ -20,47 +20,59 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import net.fourletters.dto.EncryptedMessage;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * AuthRequest
+ * Submits several messages in one call — used by the client to re-submit unconfirmed outbox messages after a detected Server restart. Idempotent per messageId.
  */
 @JsonPropertyOrder({
-  AuthRequest.JSON_PROPERTY_TOKEN
+  MessageBatchRequest.JSON_PROPERTY_MESSAGES
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-17T18:22:19.048480100+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class AuthRequest {
-  public static final String JSON_PROPERTY_TOKEN = "token";
+public class MessageBatchRequest {
+  public static final String JSON_PROPERTY_MESSAGES = "messages";
   @jakarta.annotation.Nonnull
-  private String token;
+  private List<EncryptedMessage> messages = new ArrayList<>();
 
-  public AuthRequest() {
+  public MessageBatchRequest() {
   }
 
-  public AuthRequest token(@jakarta.annotation.Nonnull String token) {
+  public MessageBatchRequest messages(@jakarta.annotation.Nonnull List<EncryptedMessage> messages) {
     
-    this.token = token;
+    this.messages = messages;
+    return this;
+  }
+
+  public MessageBatchRequest addMessagesItem(EncryptedMessage messagesItem) {
+    if (this.messages == null) {
+      this.messages = new ArrayList<>();
+    }
+    this.messages.add(messagesItem);
     return this;
   }
 
   /**
-   * The identity token provided by the third-party OAuth provider.
-   * @return token
+   * The messages to (re)submit, capped per request; the client chunks larger resyncs.
+   * @return messages
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_TOKEN, required = true)
+  @JsonProperty(value = JSON_PROPERTY_MESSAGES, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public String getToken() {
-    return token;
+  public List<EncryptedMessage> getMessages() {
+    return messages;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_TOKEN, required = true)
+  @JsonProperty(value = JSON_PROPERTY_MESSAGES, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setToken(@jakarta.annotation.Nonnull String token) {
-    this.token = token;
+  public void setMessages(@jakarta.annotation.Nonnull List<EncryptedMessage> messages) {
+    this.messages = messages;
   }
 
 
@@ -72,20 +84,20 @@ public class AuthRequest {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AuthRequest authRequest = (AuthRequest) o;
-    return Objects.equals(this.token, authRequest.token);
+    MessageBatchRequest messageBatchRequest = (MessageBatchRequest) o;
+    return Objects.equals(this.messages, messageBatchRequest.messages);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(token);
+    return Objects.hash(messages);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class AuthRequest {\n");
-    sb.append("    token: ").append(toIndentedString(token)).append("\n");
+    sb.append("class MessageBatchRequest {\n");
+    sb.append("    messages: ").append(toIndentedString(messages)).append("\n");
     sb.append("}");
     return sb.toString();
   }

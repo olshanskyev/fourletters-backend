@@ -23,85 +23,85 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import net.fourletters.dto.EncryptedMessage;
+import net.fourletters.dto.AcceptedResponse;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * InboxResponse
+ * MessageBatchResponse
  */
 @JsonPropertyOrder({
-  InboxResponse.JSON_PROPERTY_MESSAGES,
-  InboxResponse.JSON_PROPERTY_SERVER_STARTED_AT
+  MessageBatchResponse.JSON_PROPERTY_RESULTS,
+  MessageBatchResponse.JSON_PROPERTY_SERVER_STARTED_AT
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-17T18:22:19.048480100+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class InboxResponse {
-  public static final String JSON_PROPERTY_MESSAGES = "messages";
+public class MessageBatchResponse {
+  public static final String JSON_PROPERTY_RESULTS = "results";
   @jakarta.annotation.Nonnull
-  private List<EncryptedMessage> messages = new ArrayList<>();
+  private List<AcceptedResponse> results = new ArrayList<>();
 
   public static final String JSON_PROPERTY_SERVER_STARTED_AT = "serverStartedAt";
-  @jakarta.annotation.Nullable
+  @jakarta.annotation.Nonnull
   private Long serverStartedAt;
 
-  public InboxResponse() {
+  public MessageBatchResponse() {
   }
 
-  public InboxResponse messages(@jakarta.annotation.Nonnull List<EncryptedMessage> messages) {
+  public MessageBatchResponse results(@jakarta.annotation.Nonnull List<AcceptedResponse> results) {
     
-    this.messages = messages;
+    this.results = results;
     return this;
   }
 
-  public InboxResponse addMessagesItem(EncryptedMessage messagesItem) {
-    if (this.messages == null) {
-      this.messages = new ArrayList<>();
+  public MessageBatchResponse addResultsItem(AcceptedResponse resultsItem) {
+    if (this.results == null) {
+      this.results = new ArrayList<>();
     }
-    this.messages.add(messagesItem);
+    this.results.add(resultsItem);
     return this;
   }
 
   /**
-   * The recipient&#39;s undelivered messages, in arrival order.
-   * @return messages
+   * Per-message acceptance result, in request order.
+   * @return results
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_MESSAGES, required = true)
+  @JsonProperty(value = JSON_PROPERTY_RESULTS, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public List<EncryptedMessage> getMessages() {
-    return messages;
+  public List<AcceptedResponse> getResults() {
+    return results;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_MESSAGES, required = true)
+  @JsonProperty(value = JSON_PROPERTY_RESULTS, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setMessages(@jakarta.annotation.Nonnull List<EncryptedMessage> messages) {
-    this.messages = messages;
+  public void setResults(@jakarta.annotation.Nonnull List<AcceptedResponse> results) {
+    this.results = results;
   }
 
-  public InboxResponse serverStartedAt(@jakarta.annotation.Nullable Long serverStartedAt) {
+  public MessageBatchResponse serverStartedAt(@jakarta.annotation.Nonnull Long serverStartedAt) {
     
     this.serverStartedAt = serverStartedAt;
     return this;
   }
 
   /**
-   * Epoch milliseconds at which this Server process started. A changed value across responses signals a restart, after which the client re-submits its unconfirmed outbox messages.
+   * Epoch milliseconds at which this Server process started (carried once for the whole batch).
    * @return serverStartedAt
    */
-  @jakarta.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_SERVER_STARTED_AT, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @jakarta.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_SERVER_STARTED_AT, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
   public Long getServerStartedAt() {
     return serverStartedAt;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_SERVER_STARTED_AT, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setServerStartedAt(@jakarta.annotation.Nullable Long serverStartedAt) {
+  @JsonProperty(value = JSON_PROPERTY_SERVER_STARTED_AT, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setServerStartedAt(@jakarta.annotation.Nonnull Long serverStartedAt) {
     this.serverStartedAt = serverStartedAt;
   }
 
@@ -114,21 +114,21 @@ public class InboxResponse {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    InboxResponse inboxResponse = (InboxResponse) o;
-    return Objects.equals(this.messages, inboxResponse.messages) &&
-        Objects.equals(this.serverStartedAt, inboxResponse.serverStartedAt);
+    MessageBatchResponse messageBatchResponse = (MessageBatchResponse) o;
+    return Objects.equals(this.results, messageBatchResponse.results) &&
+        Objects.equals(this.serverStartedAt, messageBatchResponse.serverStartedAt);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(messages, serverStartedAt);
+    return Objects.hash(results, serverStartedAt);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class InboxResponse {\n");
-    sb.append("    messages: ").append(toIndentedString(messages)).append("\n");
+    sb.append("class MessageBatchResponse {\n");
+    sb.append("    results: ").append(toIndentedString(results)).append("\n");
     sb.append("    serverStartedAt: ").append(toIndentedString(serverStartedAt)).append("\n");
     sb.append("}");
     return sb.toString();

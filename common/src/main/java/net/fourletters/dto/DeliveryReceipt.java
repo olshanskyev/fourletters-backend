@@ -29,14 +29,19 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
  */
 @JsonPropertyOrder({
   DeliveryReceipt.JSON_PROPERTY_MESSAGE_ID,
+  DeliveryReceipt.JSON_PROPERTY_ORIGINAL_SENDER_ID,
   DeliveryReceipt.JSON_PROPERTY_TYPE,
   DeliveryReceipt.JSON_PROPERTY_SIGNATURE
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-17T14:00:55.009181600+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-17T18:22:19.048480100+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class DeliveryReceipt {
   public static final String JSON_PROPERTY_MESSAGE_ID = "messageId";
   @jakarta.annotation.Nonnull
   private UUID messageId;
+
+  public static final String JSON_PROPERTY_ORIGINAL_SENDER_ID = "originalSenderId";
+  @jakarta.annotation.Nullable
+  private UUID originalSenderId;
 
   /**
    * &#39;delivered&#39; &#x3D; the recipient device received and decrypted it; &#39;read&#39; &#x3D; the user opened it.
@@ -109,6 +114,31 @@ public class DeliveryReceipt {
     this.messageId = messageId;
   }
 
+  public DeliveryReceipt originalSenderId(@jakarta.annotation.Nullable UUID originalSenderId) {
+    
+    this.originalSenderId = originalSenderId;
+    return this;
+  }
+
+  /**
+   * ID of the original message&#39;s sender — the party to notify. Echoed by the recipient from the received message so the Server can relay this receipt 
+   * @return originalSenderId
+   */
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_ORIGINAL_SENDER_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public UUID getOriginalSenderId() {
+    return originalSenderId;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_ORIGINAL_SENDER_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setOriginalSenderId(@jakarta.annotation.Nullable UUID originalSenderId) {
+    this.originalSenderId = originalSenderId;
+  }
+
   public DeliveryReceipt type(@jakarta.annotation.Nonnull TypeEnum type) {
     
     this.type = type;
@@ -141,7 +171,7 @@ public class DeliveryReceipt {
   }
 
   /**
-   * Signature over (messageId, type) by the recipient&#39;s identity key (Base64). Lets the Server and the original sender trust the receipt without trusting any Hub.
+   * Signature over (messageId, type, originalSenderId) by the recipient&#39;s identity key (Base64). Lets the Server and the original sender trust the receipt without trusting any Hub.
    * @return signature
    */
   @jakarta.annotation.Nonnull
@@ -170,13 +200,14 @@ public class DeliveryReceipt {
     }
     DeliveryReceipt deliveryReceipt = (DeliveryReceipt) o;
     return Objects.equals(this.messageId, deliveryReceipt.messageId) &&
+        Objects.equals(this.originalSenderId, deliveryReceipt.originalSenderId) &&
         Objects.equals(this.type, deliveryReceipt.type) &&
         Objects.equals(this.signature, deliveryReceipt.signature);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(messageId, type, signature);
+    return Objects.hash(messageId, originalSenderId, type, signature);
   }
 
   @Override
@@ -184,6 +215,7 @@ public class DeliveryReceipt {
     StringBuilder sb = new StringBuilder();
     sb.append("class DeliveryReceipt {\n");
     sb.append("    messageId: ").append(toIndentedString(messageId)).append("\n");
+    sb.append("    originalSenderId: ").append(toIndentedString(originalSenderId)).append("\n");
     sb.append("    type: ").append(toIndentedString(type)).append("\n");
     sb.append("    signature: ").append(toIndentedString(signature)).append("\n");
     sb.append("}");

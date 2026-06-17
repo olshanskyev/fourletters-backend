@@ -4,6 +4,8 @@ import net.fourletters.dto.AcceptedResponse;
 import net.fourletters.dto.DeliveryReceipt;
 import net.fourletters.dto.EncryptedMessage;
 import net.fourletters.dto.InboxResponse;
+import net.fourletters.dto.MessageBatchRequest;
+import net.fourletters.dto.MessageBatchResponse;
 import net.fourletters.server.service.InboxService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -25,6 +28,9 @@ import java.util.UUID;
 public class MessageController {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageController.class);
+
+    /** Maximum messages accepted in one /messages/batch call; clients chunk larger resyncs. */
+    private static final int MAX_BATCH_SIZE = 100;
 
     private final InboxService inboxService;
 
@@ -44,6 +50,24 @@ public class MessageController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(inboxService.accept(message, senderId));
     }
 
+    @PostMapping(value = "/messages/batch", produces = "application/json")
+    public ResponseEntity<MessageBatchResponse> sendMessages(@RequestBody MessageBatchRequest request) {
+        UUID senderId = currentUserId();
+        if (senderId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        List<EncryptedMessage> messages = request != null ? request.getMessages() : null;
+        if (messages == null || messages.isEmpty() || messages.size() > MAX_BATCH_SIZE) {
+            return ResponseEntity.badRequest().build();
+        }
+        for (EncryptedMessage message : messages) {
+            if (message.getPayload().isBlank()) {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(inboxService.acceptAll(messages, senderId));
+    }
+
     @GetMapping(value = "/inbox", produces = "application/json")
     public ResponseEntity<InboxResponse> getInbox() {
         UUID recipientId = currentUserId();
@@ -55,6 +79,8 @@ public class MessageController {
 
     @PostMapping("/receipts")
     public ResponseEntity<Void> submitReceipt(@RequestBody DeliveryReceipt receipt) {
+        logger.info("got read request {}", receipt.toString());
+
         UUID recipientId = currentUserId();
         if (recipientId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
