@@ -25,26 +25,25 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * DeliveryReceipt
+ * A delivery/read acknowledgement for a message the calling user sent, delivered to the sender via the inbox pull.
  */
 @JsonPropertyOrder({
-  DeliveryReceipt.JSON_PROPERTY_MESSAGE_ID,
-  DeliveryReceipt.JSON_PROPERTY_ORIGINAL_SENDER_ID,
-  DeliveryReceipt.JSON_PROPERTY_TYPE,
-  DeliveryReceipt.JSON_PROPERTY_SIGNATURE
+  MessageReceipt.JSON_PROPERTY_MESSAGE_ID,
+  MessageReceipt.JSON_PROPERTY_RECIPIENT_ID,
+  MessageReceipt.JSON_PROPERTY_TYPE
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-17T19:09:22.768486900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class DeliveryReceipt {
+public class MessageReceipt {
   public static final String JSON_PROPERTY_MESSAGE_ID = "messageId";
   @jakarta.annotation.Nonnull
   private UUID messageId;
 
-  public static final String JSON_PROPERTY_ORIGINAL_SENDER_ID = "originalSenderId";
-  @jakarta.annotation.Nullable
-  private UUID originalSenderId;
+  public static final String JSON_PROPERTY_RECIPIENT_ID = "recipientId";
+  @jakarta.annotation.Nonnull
+  private UUID recipientId;
 
   /**
-   * &#39;delivered&#39; &#x3D; the recipient device received and decrypted it; &#39;read&#39; &#x3D; the user opened it.
+   * &#39;delivered&#39; &#x3D; received and decrypted; &#39;read&#39; &#x3D; opened by the user.
    */
   public enum TypeEnum {
     DELIVERED(String.valueOf("delivered")),
@@ -82,21 +81,17 @@ public class DeliveryReceipt {
   @jakarta.annotation.Nonnull
   private TypeEnum type;
 
-  public static final String JSON_PROPERTY_SIGNATURE = "signature";
-  @jakarta.annotation.Nonnull
-  private String signature;
-
-  public DeliveryReceipt() {
+  public MessageReceipt() {
   }
 
-  public DeliveryReceipt messageId(@jakarta.annotation.Nonnull UUID messageId) {
+  public MessageReceipt messageId(@jakarta.annotation.Nonnull UUID messageId) {
     
     this.messageId = messageId;
     return this;
   }
 
   /**
-   * ID of the message being acknowledged.
+   * ID of the original message being acknowledged.
    * @return messageId
    */
   @jakarta.annotation.Nonnull
@@ -114,39 +109,39 @@ public class DeliveryReceipt {
     this.messageId = messageId;
   }
 
-  public DeliveryReceipt originalSenderId(@jakarta.annotation.Nullable UUID originalSenderId) {
+  public MessageReceipt recipientId(@jakarta.annotation.Nonnull UUID recipientId) {
     
-    this.originalSenderId = originalSenderId;
+    this.recipientId = recipientId;
     return this;
   }
 
   /**
-   * ID of the original message&#39;s sender — the party to notify. Echoed by the recipient from the received message so the Server can relay this receipt 
-   * @return originalSenderId
+   * ID of the user who delivered/read the message.
+   * @return recipientId
    */
-  @jakarta.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_ORIGINAL_SENDER_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @jakarta.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_RECIPIENT_ID, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public UUID getOriginalSenderId() {
-    return originalSenderId;
+  public UUID getRecipientId() {
+    return recipientId;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_ORIGINAL_SENDER_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setOriginalSenderId(@jakarta.annotation.Nullable UUID originalSenderId) {
-    this.originalSenderId = originalSenderId;
+  @JsonProperty(value = JSON_PROPERTY_RECIPIENT_ID, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setRecipientId(@jakarta.annotation.Nonnull UUID recipientId) {
+    this.recipientId = recipientId;
   }
 
-  public DeliveryReceipt type(@jakarta.annotation.Nonnull TypeEnum type) {
+  public MessageReceipt type(@jakarta.annotation.Nonnull TypeEnum type) {
     
     this.type = type;
     return this;
   }
 
   /**
-   * &#39;delivered&#39; &#x3D; the recipient device received and decrypted it; &#39;read&#39; &#x3D; the user opened it.
+   * &#39;delivered&#39; &#x3D; received and decrypted; &#39;read&#39; &#x3D; opened by the user.
    * @return type
    */
   @jakarta.annotation.Nonnull
@@ -164,31 +159,6 @@ public class DeliveryReceipt {
     this.type = type;
   }
 
-  public DeliveryReceipt signature(@jakarta.annotation.Nonnull String signature) {
-    
-    this.signature = signature;
-    return this;
-  }
-
-  /**
-   * Signature over (messageId, type, originalSenderId) by the recipient&#39;s identity key (Base64). Lets the Server and the original sender trust the receipt without trusting any Hub.
-   * @return signature
-   */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_SIGNATURE, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-
-  public String getSignature() {
-    return signature;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_SIGNATURE, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setSignature(@jakarta.annotation.Nonnull String signature) {
-    this.signature = signature;
-  }
-
 
   @Override
   public boolean equals(Object o) {
@@ -198,26 +168,24 @@ public class DeliveryReceipt {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    DeliveryReceipt deliveryReceipt = (DeliveryReceipt) o;
-    return Objects.equals(this.messageId, deliveryReceipt.messageId) &&
-        Objects.equals(this.originalSenderId, deliveryReceipt.originalSenderId) &&
-        Objects.equals(this.type, deliveryReceipt.type) &&
-        Objects.equals(this.signature, deliveryReceipt.signature);
+    MessageReceipt messageReceipt = (MessageReceipt) o;
+    return Objects.equals(this.messageId, messageReceipt.messageId) &&
+        Objects.equals(this.recipientId, messageReceipt.recipientId) &&
+        Objects.equals(this.type, messageReceipt.type);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(messageId, originalSenderId, type, signature);
+    return Objects.hash(messageId, recipientId, type);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class DeliveryReceipt {\n");
+    sb.append("class MessageReceipt {\n");
     sb.append("    messageId: ").append(toIndentedString(messageId)).append("\n");
-    sb.append("    originalSenderId: ").append(toIndentedString(originalSenderId)).append("\n");
+    sb.append("    recipientId: ").append(toIndentedString(recipientId)).append("\n");
     sb.append("    type: ").append(toIndentedString(type)).append("\n");
-    sb.append("    signature: ").append(toIndentedString(signature)).append("\n");
     sb.append("}");
     return sb.toString();
   }

@@ -42,6 +42,9 @@ spring:
     port: 5672
     username: guest
     password: guest
+    # Surface unroutable (mandatory) publishes back to the Server so receipts for an offline
+    # sender can be retained for /inbox pull; routable receipts (online sender) are not stored.
+    publisher-returns: true
 rest:
   cors:
     allowedOriginPatterns: "https://localhost"

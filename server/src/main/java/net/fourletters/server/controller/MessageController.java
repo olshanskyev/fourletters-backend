@@ -79,7 +79,6 @@ public class MessageController {
 
     @PostMapping("/receipts")
     public ResponseEntity<Void> submitReceipt(@RequestBody DeliveryReceipt receipt) {
-        logger.info("got read request {}", receipt.toString());
 
         UUID recipientId = currentUserId();
         if (recipientId == null) {

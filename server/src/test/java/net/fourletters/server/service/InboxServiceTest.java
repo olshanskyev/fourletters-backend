@@ -48,7 +48,7 @@ class InboxServiceTest {
         lenient().when(repository.findByRecipientIdOrderByCreatedAtAsc(any()))
                 .thenReturn(Collections.emptyList());
         // hold window of 0s so flushExpired() treats accepted messages as already expired.
-        service = new InboxService(rabbitMqService, repository, 0L);
+        service = new InboxService(rabbitMqService, repository, new PendingReceipts(), 0L);
     }
 
     private EncryptedMessage newMessage() {

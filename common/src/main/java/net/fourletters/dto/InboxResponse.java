@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import net.fourletters.dto.EncryptedMessage;
+import net.fourletters.dto.MessageReceipt;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
@@ -32,13 +33,18 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
  */
 @JsonPropertyOrder({
   InboxResponse.JSON_PROPERTY_MESSAGES,
+  InboxResponse.JSON_PROPERTY_RECEIPTS,
   InboxResponse.JSON_PROPERTY_SERVER_STARTED_AT
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-17T18:22:19.048480100+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-17T19:09:22.768486900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class InboxResponse {
   public static final String JSON_PROPERTY_MESSAGES = "messages";
   @jakarta.annotation.Nonnull
   private List<EncryptedMessage> messages = new ArrayList<>();
+
+  public static final String JSON_PROPERTY_RECEIPTS = "receipts";
+  @jakarta.annotation.Nullable
+  private List<MessageReceipt> receipts = new ArrayList<>();
 
   public static final String JSON_PROPERTY_SERVER_STARTED_AT = "serverStartedAt";
   @jakarta.annotation.Nullable
@@ -80,6 +86,39 @@ public class InboxResponse {
     this.messages = messages;
   }
 
+  public InboxResponse receipts(@jakarta.annotation.Nullable List<MessageReceipt> receipts) {
+    
+    this.receipts = receipts;
+    return this;
+  }
+
+  public InboxResponse addReceiptsItem(MessageReceipt receiptsItem) {
+    if (this.receipts == null) {
+      this.receipts = new ArrayList<>();
+    }
+    this.receipts.add(receiptsItem);
+    return this;
+  }
+
+  /**
+   * Pending delivery/read acknowledgements for messages this user sent, accumulated while the user was offline. Returned once and then cleared.
+   * @return receipts
+   */
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_RECEIPTS, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public List<MessageReceipt> getReceipts() {
+    return receipts;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_RECEIPTS, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setReceipts(@jakarta.annotation.Nullable List<MessageReceipt> receipts) {
+    this.receipts = receipts;
+  }
+
   public InboxResponse serverStartedAt(@jakarta.annotation.Nullable Long serverStartedAt) {
     
     this.serverStartedAt = serverStartedAt;
@@ -116,12 +155,13 @@ public class InboxResponse {
     }
     InboxResponse inboxResponse = (InboxResponse) o;
     return Objects.equals(this.messages, inboxResponse.messages) &&
+        Objects.equals(this.receipts, inboxResponse.receipts) &&
         Objects.equals(this.serverStartedAt, inboxResponse.serverStartedAt);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(messages, serverStartedAt);
+    return Objects.hash(messages, receipts, serverStartedAt);
   }
 
   @Override
@@ -129,6 +169,7 @@ public class InboxResponse {
     StringBuilder sb = new StringBuilder();
     sb.append("class InboxResponse {\n");
     sb.append("    messages: ").append(toIndentedString(messages)).append("\n");
+    sb.append("    receipts: ").append(toIndentedString(receipts)).append("\n");
     sb.append("    serverStartedAt: ").append(toIndentedString(serverStartedAt)).append("\n");
     sb.append("}");
     return sb.toString();

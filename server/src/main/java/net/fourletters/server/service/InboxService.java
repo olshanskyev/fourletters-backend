@@ -51,11 +51,16 @@ public class InboxService {
     /** In-memory hot tier: all heap state and its atomic operations. */
     private final HotTierStorage hotTier = new HotTierStorage();
 
+    /** In-memory backstop of acks owed to offline senders, pulled via /inbox. */
+    private final PendingReceipts pendingReceipts;
+
     public InboxService(ServerRabbitMqService rabbitMqService,
                         InboxMessageRepository inboxRepository,
+                        PendingReceipts pendingReceipts,
                         @Value("${inbox.hold-window-seconds:30}") long holdWindowSeconds) {
         this.rabbitMqService = rabbitMqService;
         this.inboxRepository = inboxRepository;
+        this.pendingReceipts = pendingReceipts;
         this.holdWindow = Duration.ofSeconds(holdWindowSeconds);
     }
 
@@ -101,19 +106,21 @@ public class InboxService {
 
     /**
      * Return the recipient's retained messages from the <b>union</b> of the hot and cold
-     * tiers, in arrival order. A message in transit between tiers appears in both (a harmless
-     * duplicate the client de-duplicates by message id) and never in neither (no gap).
+     * tiers, in arrival order, plus any acknowledgements owed to this user as a sender that
+     * accumulated while they were offline. A message in transit between tiers appears in both
+     * (a harmless duplicate the client de-duplicates by message id) and never in neither.
      */
-    public InboxResponse getInbox(UUID recipientId) {
+    public InboxResponse getInbox(UUID userId) {
         List<EncryptedMessage> messages = new ArrayList<>();
         // Cold rows are older than anything still held, so they come first, in arrival order.
-        for (InboxMessage row : inboxRepository.findByRecipientIdOrderByCreatedAtAsc(recipientId)) {
+        for (InboxMessage row : inboxRepository.findByRecipientIdOrderByCreatedAtAsc(userId)) {
             messages.add(row.toDto());
         }
-        messages.addAll(hotTier.messagesFor(recipientId));
+        messages.addAll(hotTier.messagesFor(userId));
 
         InboxResponse response = new InboxResponse();
         response.setMessages(messages);
+        response.setReceipts(pendingReceipts.drain(userId));
         response.setServerStartedAt(serverStartedAt);
         return response;
     }
@@ -139,6 +146,9 @@ public class InboxService {
             logger.debug("Ignoring receipt for message {} from {} (no relay target)", messageId, recipientId);
             return;
         }
+        // Relay live. If the sender is offline the publish comes back unroutable and the broker
+        // service retains it in PendingReceipts for the sender to pull via /inbox; an online
+        // sender gets it live and nothing is stored.
         relayReceipt(recipientId, messageId, target, receipt.getType());
     }
 
