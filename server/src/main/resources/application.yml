@@ -63,7 +63,7 @@ hub:
     secret: "dev-hub-registration-secret"
 # Server-owned inbox
 inbox:
-  # Seconds a message is held in memory awaiting a signed receipt before it is flushed to PostgreSQL.
+  # Seconds a message is held in memory awaiting a receipt before it is flushed to PostgreSQL.
   hold-window-seconds: 30
   # How often the sweeper scans the hot tier for expired (unconfirmed) messages.
   flush-interval-ms: 5000

@@ -1,9 +1,6 @@
 package net.fourletters.server.service;
 
-import net.fourletters.dto.AcceptedResponse;
-import net.fourletters.dto.DeliveryReceipt;
-import net.fourletters.dto.EncryptedMessage;
-import net.fourletters.dto.InboxResponse;
+import net.fourletters.dto.*;
 import net.fourletters.server.broker.ServerRabbitMqService;
 import net.fourletters.server.model.InboxMessage;
 import net.fourletters.server.repository.InboxMessageRepository;
@@ -67,7 +64,7 @@ class InboxServiceTest {
 
         DeliveryReceipt receipt = new DeliveryReceipt();
         receipt.setMessageId(accepted.getMessageId());
-        receipt.setType(DeliveryReceipt.TypeEnum.DELIVERED);
+        receipt.setType(ReceiptType.DELIVERED);
         receipt.setSignature("sig");
         service.recordReceipt(recipient, receipt);
 
@@ -133,7 +130,7 @@ class InboxServiceTest {
 
         DeliveryReceipt receipt = new DeliveryReceipt();
         receipt.setMessageId(messageId);
-        receipt.setType(DeliveryReceipt.TypeEnum.READ);
+        receipt.setType(ReceiptType.READ);
         receipt.setSignature("sig");
         service.recordReceipt(recipient, receipt);
 
@@ -148,7 +145,7 @@ class InboxServiceTest {
 
         DeliveryReceipt receipt = new DeliveryReceipt();
         receipt.setMessageId(messageId);
-        receipt.setType(DeliveryReceipt.TypeEnum.DELIVERED);
+        receipt.setType(ReceiptType.DELIVERED);
         receipt.setSignature("sig");
         service.recordReceipt(UUID.randomUUID(), receipt);
 

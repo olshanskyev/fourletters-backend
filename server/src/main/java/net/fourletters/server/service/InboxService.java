@@ -1,12 +1,6 @@
 package net.fourletters.server.service;
 
-import net.fourletters.dto.AcceptedResponse;
-import net.fourletters.dto.DeliveryReceipt;
-import net.fourletters.dto.EncryptedMessage;
-import net.fourletters.dto.InboxResponse;
-import net.fourletters.dto.MessageBatchResponse;
-import net.fourletters.dto.ReceiptData;
-import net.fourletters.dto.ReceiptEvent;
+import net.fourletters.dto.*;
 import net.fourletters.server.broker.ServerRabbitMqService;
 import net.fourletters.server.model.InboxMessage;
 import net.fourletters.server.repository.InboxMessageRepository;
@@ -28,7 +22,7 @@ import java.util.UUID;
  * <p>Two-tier store: a discardable in-memory <b>hot tier</b> (encapsulated in
  * {@link HotTierStorage}) holds messages during the post-accept hold window, and the durable
  * PostgreSQL <b>cold tier</b> is written exactly once if a message is not confirmed within
- * that window. A signed receipt drops the copy from whichever tier holds it; {@code /inbox}
+ * that window. A receipt drops the copy from whichever tier holds it; {@code /inbox}
  * reads return the union of both tiers.
  */
 @Service
@@ -149,7 +143,7 @@ public class InboxService {
         // Relay live. If the sender is offline the publish comes back unroutable and the broker
         // service retains it in PendingReceipts for the sender to pull via /inbox; an online
         // sender gets it live and nothing is stored.
-        relayReceipt(recipientId, messageId, target, receipt.getType());
+        relayReceipt(recipientId, messageId, target, receipt.getType(), receipt.getSignature());
     }
 
     /**
@@ -202,15 +196,17 @@ public class InboxService {
     }
 
 
-    private void relayReceipt(UUID recipientId, UUID messageId, UUID senderId, DeliveryReceipt.TypeEnum type) {
+    private void relayReceipt(UUID recipientId, UUID messageId, UUID senderId, ReceiptType type, String signature) {
         ReceiptData data = new ReceiptData();
         data.setMessageId(messageId);
         data.setRecipientId(recipientId);
-
+        data.setSignature(signature);
+        data.setType(type);
         ReceiptEvent event = new ReceiptEvent();
-        event.setEvent(type == DeliveryReceipt.TypeEnum.READ
+        event.setEvent(type == ReceiptType.READ
                 ? ReceiptEvent.EventEnum.MESSAGE_READ
                 : ReceiptEvent.EventEnum.MESSAGE_DELIVERED);
+
         event.setData(data);
 
         rabbitMqService.publishReceipt(senderId, event);

@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.UUID;
+import net.fourletters.dto.ReceiptType;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
@@ -30,9 +31,10 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 @JsonPropertyOrder({
   MessageReceipt.JSON_PROPERTY_MESSAGE_ID,
   MessageReceipt.JSON_PROPERTY_RECIPIENT_ID,
-  MessageReceipt.JSON_PROPERTY_TYPE
+  MessageReceipt.JSON_PROPERTY_TYPE,
+  MessageReceipt.JSON_PROPERTY_SIGNATURE
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-17T19:09:22.768486900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-18T14:27:10.653535500+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class MessageReceipt {
   public static final String JSON_PROPERTY_MESSAGE_ID = "messageId";
   @jakarta.annotation.Nonnull
@@ -42,44 +44,13 @@ public class MessageReceipt {
   @jakarta.annotation.Nonnull
   private UUID recipientId;
 
-  /**
-   * &#39;delivered&#39; &#x3D; received and decrypted; &#39;read&#39; &#x3D; opened by the user.
-   */
-  public enum TypeEnum {
-    DELIVERED(String.valueOf("delivered")),
-    
-    READ(String.valueOf("read"));
-
-    private String value;
-
-    TypeEnum(String value) {
-      this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-      return value;
-    }
-
-    @Override
-    public String toString() {
-      return String.valueOf(value);
-    }
-
-    @JsonCreator
-    public static TypeEnum fromValue(String value) {
-      for (TypeEnum b : TypeEnum.values()) {
-        if (b.value.equals(value)) {
-          return b;
-        }
-      }
-      throw new IllegalArgumentException("Unexpected value '" + value + "'");
-    }
-  }
-
   public static final String JSON_PROPERTY_TYPE = "type";
   @jakarta.annotation.Nonnull
-  private TypeEnum type;
+  private ReceiptType type;
+
+  public static final String JSON_PROPERTY_SIGNATURE = "signature";
+  @jakarta.annotation.Nonnull
+  private String signature;
 
   public MessageReceipt() {
   }
@@ -134,29 +105,54 @@ public class MessageReceipt {
     this.recipientId = recipientId;
   }
 
-  public MessageReceipt type(@jakarta.annotation.Nonnull TypeEnum type) {
+  public MessageReceipt type(@jakarta.annotation.Nonnull ReceiptType type) {
     
     this.type = type;
     return this;
   }
 
   /**
-   * &#39;delivered&#39; &#x3D; received and decrypted; &#39;read&#39; &#x3D; opened by the user.
+   * Get type
    * @return type
    */
   @jakarta.annotation.Nonnull
   @JsonProperty(value = JSON_PROPERTY_TYPE, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public TypeEnum getType() {
+  public ReceiptType getType() {
     return type;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_TYPE, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setType(@jakarta.annotation.Nonnull TypeEnum type) {
+  public void setType(@jakarta.annotation.Nonnull ReceiptType type) {
     this.type = type;
+  }
+
+  public MessageReceipt signature(@jakarta.annotation.Nonnull String signature) {
+    
+    this.signature = signature;
+    return this;
+  }
+
+  /**
+   * Signature over (messageId, type, originalSenderId) by the recipient&#39;s identity key (Base64), echoed unaltered from the submitted DeliveryReceipt.
+   * @return signature
+   */
+  @jakarta.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_SIGNATURE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+
+  public String getSignature() {
+    return signature;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_SIGNATURE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setSignature(@jakarta.annotation.Nonnull String signature) {
+    this.signature = signature;
   }
 
 
@@ -171,12 +167,13 @@ public class MessageReceipt {
     MessageReceipt messageReceipt = (MessageReceipt) o;
     return Objects.equals(this.messageId, messageReceipt.messageId) &&
         Objects.equals(this.recipientId, messageReceipt.recipientId) &&
-        Objects.equals(this.type, messageReceipt.type);
+        Objects.equals(this.type, messageReceipt.type) &&
+        Objects.equals(this.signature, messageReceipt.signature);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(messageId, recipientId, type);
+    return Objects.hash(messageId, recipientId, type, signature);
   }
 
   @Override
@@ -186,6 +183,7 @@ public class MessageReceipt {
     sb.append("    messageId: ").append(toIndentedString(messageId)).append("\n");
     sb.append("    recipientId: ").append(toIndentedString(recipientId)).append("\n");
     sb.append("    type: ").append(toIndentedString(type)).append("\n");
+    sb.append("    signature: ").append(toIndentedString(signature)).append("\n");
     sb.append("}");
     return sb.toString();
   }

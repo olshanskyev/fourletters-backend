@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.UUID;
+import net.fourletters.dto.ReceiptType;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
@@ -29,9 +30,11 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
  */
 @JsonPropertyOrder({
   ReceiptData.JSON_PROPERTY_MESSAGE_ID,
-  ReceiptData.JSON_PROPERTY_RECIPIENT_ID
+  ReceiptData.JSON_PROPERTY_RECIPIENT_ID,
+  ReceiptData.JSON_PROPERTY_TYPE,
+  ReceiptData.JSON_PROPERTY_SIGNATURE
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-17T19:09:22.768486900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-18T14:27:10.653535500+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class ReceiptData {
   public static final String JSON_PROPERTY_MESSAGE_ID = "messageId";
   @jakarta.annotation.Nonnull
@@ -40,6 +43,14 @@ public class ReceiptData {
   public static final String JSON_PROPERTY_RECIPIENT_ID = "recipientId";
   @jakarta.annotation.Nonnull
   private UUID recipientId;
+
+  public static final String JSON_PROPERTY_TYPE = "type";
+  @jakarta.annotation.Nonnull
+  private ReceiptType type;
+
+  public static final String JSON_PROPERTY_SIGNATURE = "signature";
+  @jakarta.annotation.Nonnull
+  private String signature;
 
   public ReceiptData() {
   }
@@ -94,6 +105,56 @@ public class ReceiptData {
     this.recipientId = recipientId;
   }
 
+  public ReceiptData type(@jakarta.annotation.Nonnull ReceiptType type) {
+    
+    this.type = type;
+    return this;
+  }
+
+  /**
+   * Get type
+   * @return type
+   */
+  @jakarta.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_TYPE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+
+  public ReceiptType getType() {
+    return type;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_TYPE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setType(@jakarta.annotation.Nonnull ReceiptType type) {
+    this.type = type;
+  }
+
+  public ReceiptData signature(@jakarta.annotation.Nonnull String signature) {
+    
+    this.signature = signature;
+    return this;
+  }
+
+  /**
+   * Signature over (messageId, type, originalSenderId) by the recipient&#39;s identity key (Base64), relayed unaltered from the submitted DeliveryReceipt.
+   * @return signature
+   */
+  @jakarta.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_SIGNATURE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+
+  public String getSignature() {
+    return signature;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_SIGNATURE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setSignature(@jakarta.annotation.Nonnull String signature) {
+    this.signature = signature;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -105,12 +166,14 @@ public class ReceiptData {
     }
     ReceiptData receiptData = (ReceiptData) o;
     return Objects.equals(this.messageId, receiptData.messageId) &&
-        Objects.equals(this.recipientId, receiptData.recipientId);
+        Objects.equals(this.recipientId, receiptData.recipientId) &&
+        Objects.equals(this.type, receiptData.type) &&
+        Objects.equals(this.signature, receiptData.signature);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(messageId, recipientId);
+    return Objects.hash(messageId, recipientId, type, signature);
   }
 
   @Override
@@ -119,6 +182,8 @@ public class ReceiptData {
     sb.append("class ReceiptData {\n");
     sb.append("    messageId: ").append(toIndentedString(messageId)).append("\n");
     sb.append("    recipientId: ").append(toIndentedString(recipientId)).append("\n");
+    sb.append("    type: ").append(toIndentedString(type)).append("\n");
+    sb.append("    signature: ").append(toIndentedString(signature)).append("\n");
     sb.append("}");
     return sb.toString();
   }

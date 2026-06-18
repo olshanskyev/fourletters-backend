@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   HubRegistrationResponse.JSON_PROPERTY_QUEUE_NAME,
   HubRegistrationResponse.JSON_PROPERTY_EXCHANGE
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-17T19:09:22.768486900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-18T14:27:10.653535500+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class HubRegistrationResponse {
   public static final String JSON_PROPERTY_HUB_ID = "hubId";
   @jakarta.annotation.Nonnull

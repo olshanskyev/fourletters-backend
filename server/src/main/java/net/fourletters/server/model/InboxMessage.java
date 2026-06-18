@@ -11,8 +11,8 @@ import java.util.UUID;
 
 /**
  * Cold-tier (durable) inbox row. A message is written here exactly once — only if it is
- * not confirmed by a signed delivery receipt within the in-memory hold window. Rows are
- * deleted strictly upon a verified signed receipt, or read back via {@code GET /inbox}.
+ * not confirmed by a delivery receipt within the in-memory hold window. Rows are
+ * deleted strictly upon a verified receipt, or read back via {@code GET /inbox}.
  */
 @Entity
 @Table(name = "inbox")

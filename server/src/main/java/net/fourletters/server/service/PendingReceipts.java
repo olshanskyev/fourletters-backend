@@ -1,7 +1,7 @@
 package net.fourletters.server.service;
 
-import net.fourletters.dto.DeliveryReceipt;
 import net.fourletters.dto.MessageReceipt;
+import net.fourletters.dto.ReceiptType;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -26,16 +26,16 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class PendingReceipts {
 
-    private record Entry(UUID recipientId, DeliveryReceipt.TypeEnum type) {}
+    private record Entry(UUID recipientId, ReceiptType type, String signature) {}
 
     /** senderId -> (messageId -> latest status). */
     private final Map<UUID, Map<UUID, Entry>> bySender = new ConcurrentHashMap<>();
 
     /** Record an acknowledgement owed to {@code senderId}; {@code read} wins over {@code delivered}. */
-    public void record(UUID senderId, UUID messageId, UUID recipientId, DeliveryReceipt.TypeEnum type) {
+    public void record(UUID senderId, UUID messageId, UUID recipientId, ReceiptType type, String signature) {
         bySender.computeIfAbsent(senderId, s -> new ConcurrentHashMap<>())
-                .merge(messageId, new Entry(recipientId, type),
-                        (oldE, newE) -> newE.type() == DeliveryReceipt.TypeEnum.READ ? newE : oldE);
+                .merge(messageId, new Entry(recipientId, type, signature),
+                        (oldE, newE) -> newE.type() == ReceiptType.READ ? newE : oldE);
     }
 
     /** Return and clear all pending acknowledgements for {@code senderId}. */
@@ -49,9 +49,10 @@ public class PendingReceipts {
             MessageReceipt receipt = new MessageReceipt();
             receipt.setMessageId(e.getKey());
             receipt.setRecipientId(e.getValue().recipientId());
-            receipt.setType(e.getValue().type() == DeliveryReceipt.TypeEnum.READ
-                    ? MessageReceipt.TypeEnum.READ
-                    : MessageReceipt.TypeEnum.DELIVERED);
+            receipt.setType(e.getValue().type() == ReceiptType.READ
+                    ? ReceiptType.READ
+                    : ReceiptType.DELIVERED);
+            receipt.setSignature(e.getValue().signature());
             receipts.add(receipt);
         }
         return receipts;

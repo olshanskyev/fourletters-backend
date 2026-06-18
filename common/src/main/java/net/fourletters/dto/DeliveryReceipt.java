@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.UUID;
+import net.fourletters.dto.ReceiptType;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
@@ -33,7 +34,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   DeliveryReceipt.JSON_PROPERTY_TYPE,
   DeliveryReceipt.JSON_PROPERTY_SIGNATURE
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-17T19:09:22.768486900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-18T14:27:10.653535500+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class DeliveryReceipt {
   public static final String JSON_PROPERTY_MESSAGE_ID = "messageId";
   @jakarta.annotation.Nonnull
@@ -43,44 +44,9 @@ public class DeliveryReceipt {
   @jakarta.annotation.Nullable
   private UUID originalSenderId;
 
-  /**
-   * &#39;delivered&#39; &#x3D; the recipient device received and decrypted it; &#39;read&#39; &#x3D; the user opened it.
-   */
-  public enum TypeEnum {
-    DELIVERED(String.valueOf("delivered")),
-    
-    READ(String.valueOf("read"));
-
-    private String value;
-
-    TypeEnum(String value) {
-      this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-      return value;
-    }
-
-    @Override
-    public String toString() {
-      return String.valueOf(value);
-    }
-
-    @JsonCreator
-    public static TypeEnum fromValue(String value) {
-      for (TypeEnum b : TypeEnum.values()) {
-        if (b.value.equals(value)) {
-          return b;
-        }
-      }
-      throw new IllegalArgumentException("Unexpected value '" + value + "'");
-    }
-  }
-
   public static final String JSON_PROPERTY_TYPE = "type";
   @jakarta.annotation.Nonnull
-  private TypeEnum type;
+  private ReceiptType type;
 
   public static final String JSON_PROPERTY_SIGNATURE = "signature";
   @jakarta.annotation.Nonnull
@@ -139,28 +105,28 @@ public class DeliveryReceipt {
     this.originalSenderId = originalSenderId;
   }
 
-  public DeliveryReceipt type(@jakarta.annotation.Nonnull TypeEnum type) {
+  public DeliveryReceipt type(@jakarta.annotation.Nonnull ReceiptType type) {
     
     this.type = type;
     return this;
   }
 
   /**
-   * &#39;delivered&#39; &#x3D; the recipient device received and decrypted it; &#39;read&#39; &#x3D; the user opened it.
+   * Get type
    * @return type
    */
   @jakarta.annotation.Nonnull
   @JsonProperty(value = JSON_PROPERTY_TYPE, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public TypeEnum getType() {
+  public ReceiptType getType() {
     return type;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_TYPE, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setType(@jakarta.annotation.Nonnull TypeEnum type) {
+  public void setType(@jakarta.annotation.Nonnull ReceiptType type) {
     this.type = type;
   }
 
@@ -171,7 +137,7 @@ public class DeliveryReceipt {
   }
 
   /**
-   * Signature over (messageId, type, originalSenderId) by the recipient&#39;s identity key (Base64). Lets the Server and the original sender trust the receipt without trusting any Hub.
+   * Signature over (messageId, type, originalSenderId) by the recipient&#39;s identity key (Base64). Lets the original sender trust the receipt without trusting any Hub.
    * @return signature
    */
   @jakarta.annotation.Nonnull

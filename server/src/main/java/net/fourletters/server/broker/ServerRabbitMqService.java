@@ -3,11 +3,7 @@ package net.fourletters.server.broker;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.fourletters.broker.RabbitMqTopology;
-import net.fourletters.dto.DeliveryReceipt;
-import net.fourletters.dto.EncryptedMessage;
-import net.fourletters.dto.MessageEvent;
-import net.fourletters.dto.ReceiptData;
-import net.fourletters.dto.ReceiptEvent;
+import net.fourletters.dto.*;
 import net.fourletters.server.service.PendingReceipts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,10 +112,10 @@ public class ServerRabbitMqService {
             ReceiptData data = event.getData();
             UUID senderId = UUID.fromString(
                     returned.getRoutingKey().substring(RabbitMqTopology.ROUTING_KEY_PREFIX.length()));
-            DeliveryReceipt.TypeEnum type = event.getEvent() == ReceiptEvent.EventEnum.MESSAGE_READ
-                    ? DeliveryReceipt.TypeEnum.READ
-                    : DeliveryReceipt.TypeEnum.DELIVERED;
-            pendingReceipts.record(senderId, data.getMessageId(), data.getRecipientId(), type);
+            ReceiptType type = event.getEvent() == ReceiptEvent.EventEnum.MESSAGE_READ
+                    ? ReceiptType.READ
+                    : ReceiptType.DELIVERED;
+            pendingReceipts.record(senderId, data.getMessageId(), data.getRecipientId(), type, data.getSignature());
             logger.debug("Sender {} offline; retained {} receipt for message {}",
                     senderId, type, data.getMessageId());
         } catch (Exception e) {

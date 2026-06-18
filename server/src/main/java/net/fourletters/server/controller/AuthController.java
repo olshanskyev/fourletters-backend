@@ -17,6 +17,7 @@ import net.fourletters.dto.AuthRequest;
 import net.fourletters.dto.UserResponse;
 import net.fourletters.server.service.UserService;
 import org.springframework.web.server.ResponseStatusException;
+import net.fourletters.dto.RefreshError;
 
 @RestController
 @RequestMapping("/auth")
@@ -93,9 +94,11 @@ class AuthController {
             logger.warn("Refresh token validation failed: {}", e.getMessage());
             // Clear the cookie when refresh fails
             ResponseCookie deleteCookie = buildRefreshTokenCookie("", 0L);
+            RefreshError refreshError = new RefreshError();
+            refreshError.setReason(e.getReason());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
-                    .body("Refresh Token Cannot be validated");
+                    .body(refreshError);
         }
     }
 

@@ -20,28 +20,30 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import net.fourletters.dto.EncryptedMessage;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * WS push: a new encrypted message relayed live by the Hub.
+ * Body of a 401 from /auth/refresh. &#39;revoked&#39; means a newer login took over the single active device, on which the client wipes its local E2E identity keys; the other reasons just require re-authentication.
  */
 @JsonPropertyOrder({
-  MessageEvent.JSON_PROPERTY_EVENT,
-  MessageEvent.JSON_PROPERTY_DATA
+  RefreshError.JSON_PROPERTY_REASON
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-18T14:27:10.653535500+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class MessageEvent {
+public class RefreshError {
   /**
-   * Gets or Sets event
+   * &#39;revoked&#39; &#x3D; invalidated by a newer login (single-active-device takeover); &#39;expired&#39; &#x3D; refresh token past expiry; &#39;invalid&#39; &#x3D; malformed/missing or session mismatch.
    */
-  public enum EventEnum {
-    MESSAGE_RECEIVED(String.valueOf("messageReceived"));
+  public enum ReasonEnum {
+    REVOKED(String.valueOf("revoked")),
+    
+    EXPIRED(String.valueOf("expired")),
+    
+    INVALID(String.valueOf("invalid"));
 
     private String value;
 
-    EventEnum(String value) {
+    ReasonEnum(String value) {
       this.value = value;
     }
 
@@ -56,8 +58,8 @@ public class MessageEvent {
     }
 
     @JsonCreator
-    public static EventEnum fromValue(String value) {
-      for (EventEnum b : EventEnum.values()) {
+    public static ReasonEnum fromValue(String value) {
+      for (ReasonEnum b : ReasonEnum.values()) {
         if (b.value.equals(value)) {
           return b;
         }
@@ -66,65 +68,36 @@ public class MessageEvent {
     }
   }
 
-  public static final String JSON_PROPERTY_EVENT = "event";
+  public static final String JSON_PROPERTY_REASON = "reason";
   @jakarta.annotation.Nonnull
-  private EventEnum event;
+  private ReasonEnum reason;
 
-  public static final String JSON_PROPERTY_DATA = "data";
-  @jakarta.annotation.Nonnull
-  private EncryptedMessage data;
-
-  public MessageEvent() {
+  public RefreshError() {
   }
 
-  public MessageEvent event(@jakarta.annotation.Nonnull EventEnum event) {
+  public RefreshError reason(@jakarta.annotation.Nonnull ReasonEnum reason) {
     
-    this.event = event;
+    this.reason = reason;
     return this;
   }
 
   /**
-   * Get event
-   * @return event
+   * &#39;revoked&#39; &#x3D; invalidated by a newer login (single-active-device takeover); &#39;expired&#39; &#x3D; refresh token past expiry; &#39;invalid&#39; &#x3D; malformed/missing or session mismatch.
+   * @return reason
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_EVENT, required = true)
+  @JsonProperty(value = JSON_PROPERTY_REASON, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public EventEnum getEvent() {
-    return event;
+  public ReasonEnum getReason() {
+    return reason;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_EVENT, required = true)
+  @JsonProperty(value = JSON_PROPERTY_REASON, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setEvent(@jakarta.annotation.Nonnull EventEnum event) {
-    this.event = event;
-  }
-
-  public MessageEvent data(@jakarta.annotation.Nonnull EncryptedMessage data) {
-    
-    this.data = data;
-    return this;
-  }
-
-  /**
-   * Get data
-   * @return data
-   */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-
-  public EncryptedMessage getData() {
-    return data;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setData(@jakarta.annotation.Nonnull EncryptedMessage data) {
-    this.data = data;
+  public void setReason(@jakarta.annotation.Nonnull ReasonEnum reason) {
+    this.reason = reason;
   }
 
 
@@ -136,22 +109,20 @@ public class MessageEvent {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    MessageEvent messageEvent = (MessageEvent) o;
-    return Objects.equals(this.event, messageEvent.event) &&
-        Objects.equals(this.data, messageEvent.data);
+    RefreshError refreshError = (RefreshError) o;
+    return Objects.equals(this.reason, refreshError.reason);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(event, data);
+    return Objects.hash(reason);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class MessageEvent {\n");
-    sb.append("    event: ").append(toIndentedString(event)).append("\n");
-    sb.append("    data: ").append(toIndentedString(data)).append("\n");
+    sb.append("class RefreshError {\n");
+    sb.append("    reason: ").append(toIndentedString(reason)).append("\n");
     sb.append("}");
     return sb.toString();
   }
