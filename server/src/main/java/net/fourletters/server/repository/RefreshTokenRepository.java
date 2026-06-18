@@ -10,7 +10,6 @@ import java.util.List;
 @Repository
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
     Optional<RefreshToken> findByToken(String token);
-    Optional<RefreshToken> findByTokenAndSessionId(String token, String sessionId);
     Optional<RefreshToken> findBySessionId(String sessionId);
     List<RefreshToken> findAllByUser(net.fourletters.server.model.User user);
     void deleteBySessionId(String sessionId);

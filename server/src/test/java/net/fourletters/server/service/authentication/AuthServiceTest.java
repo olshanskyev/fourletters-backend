@@ -57,7 +57,6 @@ class AuthServiceTest {
         anyToken.setToken(token);
         anyToken.setRevoked(true);
 
-        when(refreshTokenRepository.findByTokenAndSessionId(token, sessionId)).thenReturn(Optional.empty());
         when(refreshTokenRepository.findByToken(token)).thenReturn(Optional.of(anyToken));
 
         assertThatThrownBy(() -> authService.processRefresh(token, sessionId))
@@ -68,6 +67,28 @@ class AuthServiceTest {
                 });
 
         verify(refreshTokenRepository).delete(anyToken);
+    }
+
+    @Test
+    void refreshWithRevokedTokenPresentThrowsRevoked() {
+        String token = "revoked-present-token";
+        String sessionId = "present-sid";
+
+        RefreshToken rToken = new RefreshToken();
+        rToken.setToken(token);
+        rToken.setSessionId(sessionId);
+        rToken.setRevoked(true);
+
+        when(refreshTokenRepository.findByToken(anyString())).thenReturn(Optional.of(rToken));
+
+        assertThatThrownBy(() -> authService.processRefresh(token, sessionId))
+                .isInstanceOf(AuthService.InvalidTokenException.class)
+                .satisfies(ex -> {
+                    AuthService.InvalidTokenException ite = (AuthService.InvalidTokenException) ex;
+                    assertThat(ite.getReason()).isEqualTo(RefreshError.ReasonEnum.REVOKED);
+                });
+
+        verify(refreshTokenRepository).delete(rToken);
     }
 
     @Test
@@ -82,7 +103,7 @@ class AuthServiceTest {
         // expiry in the past
         rToken.setExpiryDate(new Date(System.currentTimeMillis() - 10_000));
 
-        when(refreshTokenRepository.findByTokenAndSessionId(token, sessionId)).thenReturn(Optional.of(rToken));
+        when(refreshTokenRepository.findByToken(anyString())).thenReturn(Optional.of(rToken));
         when(jwtTokenVerifier.parseClaims(token)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> authService.processRefresh(token, sessionId))
@@ -107,7 +128,7 @@ class AuthServiceTest {
         // expiry in the future (so not expired) but JWT parse fails -> invalid
         rToken.setExpiryDate(new Date(System.currentTimeMillis() + 60_000));
 
-        when(refreshTokenRepository.findByTokenAndSessionId(token, sessionId)).thenReturn(Optional.of(rToken));
+        when(refreshTokenRepository.findByToken(anyString())).thenReturn(Optional.of(rToken));
         when(jwtTokenVerifier.parseClaims(token)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> authService.processRefresh(token, sessionId))
@@ -131,7 +152,7 @@ class AuthServiceTest {
         rToken.setUser(user);
         rToken.setExpiryDate(new Date(System.currentTimeMillis() + 60_000));
 
-        when(refreshTokenRepository.findByTokenAndSessionId(token, sessionId)).thenReturn(Optional.of(rToken));
+        when(refreshTokenRepository.findByToken(token)).thenReturn(Optional.of(rToken));
 
         // token parses correctly
         when(jwtTokenVerifier.parseClaims(token)).thenReturn(Optional.of(mock(io.jsonwebtoken.Claims.class)));

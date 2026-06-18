@@ -153,47 +153,39 @@ public class AuthService {
 
     @Transactional(noRollbackFor = InvalidTokenException.class)
     public AuthResult processRefresh(String refreshTokenValue, String sessionId) throws InvalidTokenException {
-        Optional<RefreshToken> rTokenOpt = refreshTokenRepository.findByTokenAndSessionId(refreshTokenValue, sessionId);
-
-        // If exact token+session not found, try to detect whether token exists and was revoked or belongs to another session
-        if (rTokenOpt.isEmpty()) {
-            Optional<RefreshToken> anyTokenOpt = refreshTokenRepository.findByToken(refreshTokenValue);
-            if (anyTokenOpt.isPresent()) {
-                RefreshToken anyToken = anyTokenOpt.get();
-                if (anyToken.isRevoked()) {
-                    // token was revoked by a newer login
-                    // remove the revoked token record
-                    refreshTokenRepository.delete(anyToken);
-                    throw new InvalidTokenException(RefreshError.ReasonEnum.REVOKED, "Refresh token was revoked by a newer login");
-                } else {
-                    // token exists but sessionId mismatch -> possible tampering
-                    throw new InvalidTokenException(RefreshError.ReasonEnum.INVALID, "Refresh token session id mismatch");
-                }
-            }
-            // token not found at all
-            throw new InvalidTokenException(RefreshError.ReasonEnum.INVALID, "Invalid refresh token or session id. Token is not found");
+        // Single lookup by token, then validate sessionId and revoked flag. This
+        Optional<RefreshToken> tokenByValueOpt = refreshTokenRepository.findByToken(refreshTokenValue);
+        if (tokenByValueOpt.isEmpty()) {
+            throw new InvalidTokenException(RefreshError.ReasonEnum.INVALID, "Invalid refresh token. Token is not found");
         }
 
+        RefreshToken stored = tokenByValueOpt.get();
+        if (stored.isRevoked()) {
+            refreshTokenRepository.delete(stored);
+            throw new InvalidTokenException(RefreshError.ReasonEnum.REVOKED, "Refresh token was revoked by a newer login");
+        }
+
+        // session id must match the stored session id
+        if (stored.getSessionId() == null || !stored.getSessionId().equals(sessionId)) {
+            throw new InvalidTokenException(RefreshError.ReasonEnum.INVALID, "Refresh token session id mismatch");
+        }
+        // validate token signature and expiry
         Optional<Claims> claimsOpt = jwtTokenVerifier.parseClaims(refreshTokenValue);
-        RefreshToken rToken = rTokenOpt.get();
-        User user = rToken.getUser();
+        User user = stored.getUser();
 
         if (claimsOpt.isEmpty()) {
-            // determine whether token expired or malformed by checking stored expiry
-            Date expiry = rToken.getExpiryDate();
+            Date expiry = stored.getExpiryDate();
             if (expiry != null && expiry.before(new java.util.Date())) {
-                // expired
-                refreshTokenRepository.delete(rToken);
+                refreshTokenRepository.delete(stored);
                 throw new InvalidTokenException(RefreshError.ReasonEnum.EXPIRED, "Refresh token is expired");
             } else {
-                // invalid/malformed
-                refreshTokenRepository.delete(rToken);
+                refreshTokenRepository.delete(stored);
                 throw new InvalidTokenException(RefreshError.ReasonEnum.INVALID, "Refresh token is invalid");
             }
         }
 
         // clear old token from DB
-        refreshTokenRepository.delete(rToken);
+        refreshTokenRepository.delete(stored);
 
         // generate tokens
         TokenPair tokenPair = generateTokensForUser(user);
