@@ -20,47 +20,59 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import net.fourletters.dto.KeysResponse;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * AuthRequest
+ * PublicKeysBatchResponse
  */
 @JsonPropertyOrder({
-  AuthRequest.JSON_PROPERTY_TOKEN
+  PublicKeysBatchResponse.JSON_PROPERTY_RESULTS
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-19T09:41:14.179809800+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class AuthRequest {
-  public static final String JSON_PROPERTY_TOKEN = "token";
+public class PublicKeysBatchResponse {
+  public static final String JSON_PROPERTY_RESULTS = "results";
   @jakarta.annotation.Nonnull
-  private String token;
+  private List<KeysResponse> results = new ArrayList<>();
 
-  public AuthRequest() {
+  public PublicKeysBatchResponse() {
   }
 
-  public AuthRequest token(@jakarta.annotation.Nonnull String token) {
+  public PublicKeysBatchResponse results(@jakarta.annotation.Nonnull List<KeysResponse> results) {
     
-    this.token = token;
+    this.results = results;
+    return this;
+  }
+
+  public PublicKeysBatchResponse addResultsItem(KeysResponse resultsItem) {
+    if (this.results == null) {
+      this.results = new ArrayList<>();
+    }
+    this.results.add(resultsItem);
     return this;
   }
 
   /**
-   * The identity token provided by the third-party OAuth provider.
-   * @return token
+   * Get results
+   * @return results
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_TOKEN, required = true)
+  @JsonProperty(value = JSON_PROPERTY_RESULTS, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public String getToken() {
-    return token;
+  public List<KeysResponse> getResults() {
+    return results;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_TOKEN, required = true)
+  @JsonProperty(value = JSON_PROPERTY_RESULTS, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setToken(@jakarta.annotation.Nonnull String token) {
-    this.token = token;
+  public void setResults(@jakarta.annotation.Nonnull List<KeysResponse> results) {
+    this.results = results;
   }
 
 
@@ -72,20 +84,20 @@ public class AuthRequest {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AuthRequest authRequest = (AuthRequest) o;
-    return Objects.equals(this.token, authRequest.token);
+    PublicKeysBatchResponse publicKeysBatchResponse = (PublicKeysBatchResponse) o;
+    return Objects.equals(this.results, publicKeysBatchResponse.results);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(token);
+    return Objects.hash(results);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class AuthRequest {\n");
-    sb.append("    token: ").append(toIndentedString(token)).append("\n");
+    sb.append("class PublicKeysBatchResponse {\n");
+    sb.append("    results: ").append(toIndentedString(results)).append("\n");
     sb.append("}");
     return sb.toString();
   }

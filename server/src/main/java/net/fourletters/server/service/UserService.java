@@ -5,6 +5,7 @@ import net.fourletters.server.model.User;
 import net.fourletters.server.repository.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -20,17 +21,19 @@ public class UserService {
         this.usersRepository = usersRepository;
     }
 
-    public Optional<User> getUserById(long id) {
+    @Transactional(readOnly = true)
+    public Optional<User> getUserById(UUID id) {
         return usersRepository.findById(id);
     }
 
+    @Transactional
     public User save(User user) {
         return usersRepository.save(user);
     }
 
     public UserResponse mapToResponse(User user) {
         UserResponse userResponse = new UserResponse();
-        userResponse.setId(UUID.nameUUIDFromBytes(user.getId().toString().getBytes()));
+        userResponse.setId(user.getId());
         userResponse.setUsername(user.getName());
         try {
             if (user.getAvatarUrl() != null && !user.getAvatarUrl().isBlank()) {
@@ -41,8 +44,8 @@ public class UserService {
         return userResponse;
     }
 
-    public Optional<UserResponse> getUserResponseById(long id) {
+    @Transactional(readOnly = true)
+    public Optional<UserResponse> getUserResponseById(UUID id) {
         return getUserById(id).map(this::mapToResponse);
     }
 }
-

@@ -37,7 +37,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   UserResponse.JSON_PROPERTY_AVATAR_URL,
   UserResponse.JSON_PROPERTY_ROLES
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-18T14:27:10.653535500+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-19T09:41:14.179809800+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class UserResponse {
   public static final String JSON_PROPERTY_ID = "id";
   @jakarta.annotation.Nonnull

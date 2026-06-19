@@ -9,10 +9,9 @@ import net.fourletters.dto.MessageBatchResponse;
 import net.fourletters.server.service.InboxService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.fourletters.server.util.SecurityUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -40,7 +39,7 @@ public class MessageController {
 
     @PostMapping(value = "/messages", produces = "application/json")
     public ResponseEntity<AcceptedResponse> sendMessage(@RequestBody EncryptedMessage message) {
-        UUID senderId = currentUserId();
+        UUID senderId = SecurityUtils.currentUserId();
         if (senderId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -52,7 +51,7 @@ public class MessageController {
 
     @PostMapping(value = "/messages/batch", produces = "application/json")
     public ResponseEntity<MessageBatchResponse> sendMessages(@RequestBody MessageBatchRequest request) {
-        UUID senderId = currentUserId();
+        UUID senderId = SecurityUtils.currentUserId();
         if (senderId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -70,17 +69,17 @@ public class MessageController {
 
     @GetMapping(value = "/inbox", produces = "application/json")
     public ResponseEntity<InboxResponse> getInbox() {
-        UUID recipientId = currentUserId();
+        UUID recipientId = SecurityUtils.currentUserId();
         if (recipientId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         return ResponseEntity.ok(inboxService.getInbox(recipientId));
     }
 
-    @PostMapping("/receipts")
+    @PostMapping(value = "/receipts", produces = "application/json")
     public ResponseEntity<Void> submitReceipt(@RequestBody DeliveryReceipt receipt) {
 
-        UUID recipientId = currentUserId();
+        UUID recipientId = SecurityUtils.currentUserId();
         if (recipientId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -89,20 +88,5 @@ public class MessageController {
         }
         inboxService.recordReceipt(recipientId, receipt);
         return ResponseEntity.noContent().build();
-    }
-
-    /** The authenticated user's id (JWT subject is the user UUID), or null if unauthenticated. */
-    private UUID currentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()
-                || !(authentication.getPrincipal() instanceof String subject)) {
-            return null;
-        }
-        try {
-            return UUID.fromString(subject);
-        } catch (IllegalArgumentException e) {
-            logger.warn("Authenticated principal is not a UUID: {}", subject);
-            return null;
-        }
     }
 }

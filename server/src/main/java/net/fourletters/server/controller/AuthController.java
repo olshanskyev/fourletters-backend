@@ -2,6 +2,7 @@ package net.fourletters.server.controller;
 
 
 import net.fourletters.server.service.authentication.*;
+import net.fourletters.server.util.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +19,9 @@ import net.fourletters.dto.UserResponse;
 import net.fourletters.server.service.UserService;
 import org.springframework.web.server.ResponseStatusException;
 import net.fourletters.dto.RefreshError;
+
+import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/auth")
@@ -118,25 +122,12 @@ class AuthController {
 
     @GetMapping(value = "/user")
     public ResponseEntity<?> getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+        UUID userId = SecurityUtils.currentUserId();
+        if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Object principal = authentication.getPrincipal();
-        if (!(principal instanceof String userIdStr)) {
-            logger.warn("Unexpected principal type: {}", principal == null ? "null" : principal.getClass().getName());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        long userId;
-        try {
-            userId = Long.parseLong(userIdStr);
-        } catch (NumberFormatException e) {
-            logger.warn("Invalid user id: {}", userIdStr);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unexpected user id");
-        }
-
-        java.util.Optional<UserResponse> userOpt = userService.getUserResponseById(userId);
+        Optional<UserResponse> userOpt = userService.getUserResponseById(userId);
         return userOpt.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
 
     }

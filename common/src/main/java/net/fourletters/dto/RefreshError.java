@@ -29,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 @JsonPropertyOrder({
   RefreshError.JSON_PROPERTY_REASON
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-18T14:27:10.653535500+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-19T09:41:14.179809800+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class RefreshError {
   /**
    * &#39;revoked&#39; &#x3D; invalidated by a newer login (single-active-device takeover); &#39;expired&#39; &#x3D; refresh token past expiry; &#39;invalid&#39; &#x3D; malformed/missing or session mismatch.

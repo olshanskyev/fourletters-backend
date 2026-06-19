@@ -20,78 +20,79 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import net.fourletters.dto.UserResponse;
+import java.util.UUID;
+import net.fourletters.dto.PublicKeySet;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * AuthResponse
+ * KeysResponse
  */
 @JsonPropertyOrder({
-  AuthResponse.JSON_PROPERTY_ACCESS_TOKEN,
-  AuthResponse.JSON_PROPERTY_USER
+  KeysResponse.JSON_PROPERTY_USER_ID,
+  KeysResponse.JSON_PROPERTY_KEYS
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-19T09:41:14.179809800+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class AuthResponse {
-  public static final String JSON_PROPERTY_ACCESS_TOKEN = "access_token";
+public class KeysResponse {
+  public static final String JSON_PROPERTY_USER_ID = "userId";
   @jakarta.annotation.Nonnull
-  private String accessToken;
+  private UUID userId;
 
-  public static final String JSON_PROPERTY_USER = "user";
+  public static final String JSON_PROPERTY_KEYS = "keys";
   @jakarta.annotation.Nonnull
-  private UserResponse user;
+  private PublicKeySet keys;
 
-  public AuthResponse() {
+  public KeysResponse() {
   }
 
-  public AuthResponse accessToken(@jakarta.annotation.Nonnull String accessToken) {
+  public KeysResponse userId(@jakarta.annotation.Nonnull UUID userId) {
     
-    this.accessToken = accessToken;
+    this.userId = userId;
     return this;
   }
 
   /**
-   * The short-lived JWT Access Token.
-   * @return accessToken
+   * The user id these public keys belong to.
+   * @return userId
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_ACCESS_TOKEN, required = true)
+  @JsonProperty(value = JSON_PROPERTY_USER_ID, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public String getAccessToken() {
-    return accessToken;
+  public UUID getUserId() {
+    return userId;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_ACCESS_TOKEN, required = true)
+  @JsonProperty(value = JSON_PROPERTY_USER_ID, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setAccessToken(@jakarta.annotation.Nonnull String accessToken) {
-    this.accessToken = accessToken;
+  public void setUserId(@jakarta.annotation.Nonnull UUID userId) {
+    this.userId = userId;
   }
 
-  public AuthResponse user(@jakarta.annotation.Nonnull UserResponse user) {
+  public KeysResponse keys(@jakarta.annotation.Nonnull PublicKeySet keys) {
     
-    this.user = user;
+    this.keys = keys;
     return this;
   }
 
   /**
-   * Get user
-   * @return user
+   * Get keys
+   * @return keys
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_USER, required = true)
+  @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public UserResponse getUser() {
-    return user;
+  public PublicKeySet getKeys() {
+    return keys;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_USER, required = true)
+  @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setUser(@jakarta.annotation.Nonnull UserResponse user) {
-    this.user = user;
+  public void setKeys(@jakarta.annotation.Nonnull PublicKeySet keys) {
+    this.keys = keys;
   }
 
 
@@ -103,22 +104,22 @@ public class AuthResponse {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AuthResponse authResponse = (AuthResponse) o;
-    return Objects.equals(this.accessToken, authResponse.accessToken) &&
-        Objects.equals(this.user, authResponse.user);
+    KeysResponse keysResponse = (KeysResponse) o;
+    return Objects.equals(this.userId, keysResponse.userId) &&
+        Objects.equals(this.keys, keysResponse.keys);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(accessToken, user);
+    return Objects.hash(userId, keys);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class AuthResponse {\n");
-    sb.append("    accessToken: ").append(toIndentedString(accessToken)).append("\n");
-    sb.append("    user: ").append(toIndentedString(user)).append("\n");
+    sb.append("class KeysResponse {\n");
+    sb.append("    userId: ").append(toIndentedString(userId)).append("\n");
+    sb.append("    keys: ").append(toIndentedString(keys)).append("\n");
     sb.append("}");
     return sb.toString();
   }
