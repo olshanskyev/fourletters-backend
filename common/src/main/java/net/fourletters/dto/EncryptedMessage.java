@@ -32,9 +32,11 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   EncryptedMessage.JSON_PROPERTY_RECIPIENT_ID,
   EncryptedMessage.JSON_PROPERTY_SENDER_ID,
   EncryptedMessage.JSON_PROPERTY_PAYLOAD,
-  EncryptedMessage.JSON_PROPERTY_SIGNATURE
+  EncryptedMessage.JSON_PROPERTY_SIGNATURE,
+  EncryptedMessage.JSON_PROPERTY_GROUP_ID,
+  EncryptedMessage.JSON_PROPERTY_EPOCH
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-19T09:41:14.179809800+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-22T14:10:45.096494+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class EncryptedMessage {
   public static final String JSON_PROPERTY_MESSAGE_ID = "messageId";
   @jakarta.annotation.Nonnull
@@ -55,6 +57,14 @@ public class EncryptedMessage {
   public static final String JSON_PROPERTY_SIGNATURE = "signature";
   @jakarta.annotation.Nonnull
   private String signature;
+
+  public static final String JSON_PROPERTY_GROUP_ID = "groupId";
+  @jakarta.annotation.Nullable
+  private UUID groupId;
+
+  public static final String JSON_PROPERTY_EPOCH = "epoch";
+  @jakarta.annotation.Nullable
+  private Long epoch;
 
   public EncryptedMessage() {
   }
@@ -141,7 +151,7 @@ public class EncryptedMessage {
   }
 
   /**
-   * E2E encrypted message payload (Base64)
+   * E2E encrypted message payload (Base64). For a 1:1 message this is per-message ephemeral-ECDH ciphertext; for a group message it is ciphertext under the group&#39;s symmetric epoch key.
    * @return payload
    */
   @jakarta.annotation.Nonnull
@@ -184,6 +194,56 @@ public class EncryptedMessage {
     this.signature = signature;
   }
 
+  public EncryptedMessage groupId(@jakarta.annotation.Nullable UUID groupId) {
+    
+    this.groupId = groupId;
+    return this;
+  }
+
+  /**
+   * Present only for group messages. Identifies the group; the Server uses it to resolve the roster and fan out one stored copy per member. Omitted for 1:1 messages.
+   * @return groupId
+   */
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_GROUP_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public UUID getGroupId() {
+    return groupId;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_GROUP_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setGroupId(@jakarta.annotation.Nullable UUID groupId) {
+    this.groupId = groupId;
+  }
+
+  public EncryptedMessage epoch(@jakarta.annotation.Nullable Long epoch) {
+    
+    this.epoch = epoch;
+    return this;
+  }
+
+  /**
+   * Present only for group messages. The group-key epoch (version) the payload was encrypted under, so the recipient selects the matching key. Omitted for 1:1 messages.
+   * @return epoch
+   */
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_EPOCH, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public Long getEpoch() {
+    return epoch;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_EPOCH, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setEpoch(@jakarta.annotation.Nullable Long epoch) {
+    this.epoch = epoch;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -198,12 +258,14 @@ public class EncryptedMessage {
         Objects.equals(this.recipientId, encryptedMessage.recipientId) &&
         Objects.equals(this.senderId, encryptedMessage.senderId) &&
         Objects.equals(this.payload, encryptedMessage.payload) &&
-        Objects.equals(this.signature, encryptedMessage.signature);
+        Objects.equals(this.signature, encryptedMessage.signature) &&
+        Objects.equals(this.groupId, encryptedMessage.groupId) &&
+        Objects.equals(this.epoch, encryptedMessage.epoch);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(messageId, recipientId, senderId, payload, signature);
+    return Objects.hash(messageId, recipientId, senderId, payload, signature, groupId, epoch);
   }
 
   @Override
@@ -215,6 +277,8 @@ public class EncryptedMessage {
     sb.append("    senderId: ").append(toIndentedString(senderId)).append("\n");
     sb.append("    payload: ").append(toIndentedString(payload)).append("\n");
     sb.append("    signature: ").append(toIndentedString(signature)).append("\n");
+    sb.append("    groupId: ").append(toIndentedString(groupId)).append("\n");
+    sb.append("    epoch: ").append(toIndentedString(epoch)).append("\n");
     sb.append("}");
     return sb.toString();
   }

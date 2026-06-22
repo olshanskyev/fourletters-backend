@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import net.fourletters.dto.EncryptedMessage;
+import net.fourletters.dto.GroupKeySet;
 import net.fourletters.dto.MessageReceipt;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -34,9 +35,10 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 @JsonPropertyOrder({
   InboxResponse.JSON_PROPERTY_MESSAGES,
   InboxResponse.JSON_PROPERTY_RECEIPTS,
+  InboxResponse.JSON_PROPERTY_GROUP_KEYS,
   InboxResponse.JSON_PROPERTY_SERVER_STARTED_AT
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-19T09:41:14.179809800+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-22T14:10:45.096494+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class InboxResponse {
   public static final String JSON_PROPERTY_MESSAGES = "messages";
   @jakarta.annotation.Nonnull
@@ -45,6 +47,10 @@ public class InboxResponse {
   public static final String JSON_PROPERTY_RECEIPTS = "receipts";
   @jakarta.annotation.Nullable
   private List<MessageReceipt> receipts = new ArrayList<>();
+
+  public static final String JSON_PROPERTY_GROUP_KEYS = "groupKeys";
+  @jakarta.annotation.Nullable
+  private List<GroupKeySet> groupKeys = new ArrayList<>();
 
   public static final String JSON_PROPERTY_SERVER_STARTED_AT = "serverStartedAt";
   @jakarta.annotation.Nullable
@@ -119,6 +125,39 @@ public class InboxResponse {
     this.receipts = receipts;
   }
 
+  public InboxResponse groupKeys(@jakarta.annotation.Nullable List<GroupKeySet> groupKeys) {
+    
+    this.groupKeys = groupKeys;
+    return this;
+  }
+
+  public InboxResponse addGroupKeysItem(GroupKeySet groupKeysItem) {
+    if (this.groupKeys == null) {
+      this.groupKeys = new ArrayList<>();
+    }
+    this.groupKeys.add(groupKeysItem);
+    return this;
+  }
+
+  /**
+   * Wrapped group keys the caller is missing for groups they belong to — e.g. they were offline during a rotation or just joined. Each entry is the current epoch&#39;s key wrapped to the caller&#39;s encryption key. Folded into the inbox pull so reconnect is a single round-trip. Returned once and then cleared.
+   * @return groupKeys
+   */
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_GROUP_KEYS, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public List<GroupKeySet> getGroupKeys() {
+    return groupKeys;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_GROUP_KEYS, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setGroupKeys(@jakarta.annotation.Nullable List<GroupKeySet> groupKeys) {
+    this.groupKeys = groupKeys;
+  }
+
   public InboxResponse serverStartedAt(@jakarta.annotation.Nullable Long serverStartedAt) {
     
     this.serverStartedAt = serverStartedAt;
@@ -156,12 +195,13 @@ public class InboxResponse {
     InboxResponse inboxResponse = (InboxResponse) o;
     return Objects.equals(this.messages, inboxResponse.messages) &&
         Objects.equals(this.receipts, inboxResponse.receipts) &&
+        Objects.equals(this.groupKeys, inboxResponse.groupKeys) &&
         Objects.equals(this.serverStartedAt, inboxResponse.serverStartedAt);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(messages, receipts, serverStartedAt);
+    return Objects.hash(messages, receipts, groupKeys, serverStartedAt);
   }
 
   @Override
@@ -170,6 +210,7 @@ public class InboxResponse {
     sb.append("class InboxResponse {\n");
     sb.append("    messages: ").append(toIndentedString(messages)).append("\n");
     sb.append("    receipts: ").append(toIndentedString(receipts)).append("\n");
+    sb.append("    groupKeys: ").append(toIndentedString(groupKeys)).append("\n");
     sb.append("    serverStartedAt: ").append(toIndentedString(serverStartedAt)).append("\n");
     sb.append("}");
     return sb.toString();

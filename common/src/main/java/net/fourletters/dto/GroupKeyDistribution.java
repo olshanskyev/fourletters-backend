@@ -20,78 +20,88 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import java.util.UUID;
-import net.fourletters.dto.PublicKeySet;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import net.fourletters.dto.WrappedGroupKey;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * KeysResponse
+ * A complete set of wrapped group keys for one epoch, one entry per member. Generated client-side on create/rotation and posted to the Server, which relays the blobs and advances the roster epoch (compare-and-swap).
  */
 @JsonPropertyOrder({
-  KeysResponse.JSON_PROPERTY_USER_ID,
-  KeysResponse.JSON_PROPERTY_KEYS
+  GroupKeyDistribution.JSON_PROPERTY_EPOCH,
+  GroupKeyDistribution.JSON_PROPERTY_KEYS
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-22T14:10:45.096494+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class KeysResponse {
-  public static final String JSON_PROPERTY_USER_ID = "userId";
+public class GroupKeyDistribution {
+  public static final String JSON_PROPERTY_EPOCH = "epoch";
   @jakarta.annotation.Nonnull
-  private UUID userId;
+  private Long epoch;
 
   public static final String JSON_PROPERTY_KEYS = "keys";
   @jakarta.annotation.Nonnull
-  private PublicKeySet keys;
+  private List<WrappedGroupKey> keys = new ArrayList<>();
 
-  public KeysResponse() {
+  public GroupKeyDistribution() {
   }
 
-  public KeysResponse userId(@jakarta.annotation.Nonnull UUID userId) {
+  public GroupKeyDistribution epoch(@jakarta.annotation.Nonnull Long epoch) {
     
-    this.userId = userId;
+    this.epoch = epoch;
     return this;
   }
 
   /**
-   * The user id these public keys belong to.
-   * @return userId
+   * The epoch these wrapped keys belong to. On rotation this must equal the group&#39;s current epoch + 1; the write is rejected (409) if the current epoch is not exactly the prior value.
+   * @return epoch
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_USER_ID, required = true)
+  @JsonProperty(value = JSON_PROPERTY_EPOCH, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public UUID getUserId() {
-    return userId;
+  public Long getEpoch() {
+    return epoch;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_USER_ID, required = true)
+  @JsonProperty(value = JSON_PROPERTY_EPOCH, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setUserId(@jakarta.annotation.Nonnull UUID userId) {
-    this.userId = userId;
+  public void setEpoch(@jakarta.annotation.Nonnull Long epoch) {
+    this.epoch = epoch;
   }
 
-  public KeysResponse keys(@jakarta.annotation.Nonnull PublicKeySet keys) {
+  public GroupKeyDistribution keys(@jakarta.annotation.Nonnull List<WrappedGroupKey> keys) {
     
     this.keys = keys;
     return this;
   }
 
+  public GroupKeyDistribution addKeysItem(WrappedGroupKey keysItem) {
+    if (this.keys == null) {
+      this.keys = new ArrayList<>();
+    }
+    this.keys.add(keysItem);
+    return this;
+  }
+
   /**
-   * Get keys
+   * One wrapped key per member of the (post-change) roster. The Server validates the set covers exactly the roster.
    * @return keys
    */
   @jakarta.annotation.Nonnull
   @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public PublicKeySet getKeys() {
+  public List<WrappedGroupKey> getKeys() {
     return keys;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setKeys(@jakarta.annotation.Nonnull PublicKeySet keys) {
+  public void setKeys(@jakarta.annotation.Nonnull List<WrappedGroupKey> keys) {
     this.keys = keys;
   }
 
@@ -104,21 +114,21 @@ public class KeysResponse {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    KeysResponse keysResponse = (KeysResponse) o;
-    return Objects.equals(this.userId, keysResponse.userId) &&
-        Objects.equals(this.keys, keysResponse.keys);
+    GroupKeyDistribution groupKeyDistribution = (GroupKeyDistribution) o;
+    return Objects.equals(this.epoch, groupKeyDistribution.epoch) &&
+        Objects.equals(this.keys, groupKeyDistribution.keys);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(userId, keys);
+    return Objects.hash(epoch, keys);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class KeysResponse {\n");
-    sb.append("    userId: ").append(toIndentedString(userId)).append("\n");
+    sb.append("class GroupKeyDistribution {\n");
+    sb.append("    epoch: ").append(toIndentedString(epoch)).append("\n");
     sb.append("    keys: ").append(toIndentedString(keys)).append("\n");
     sb.append("}");
     return sb.toString();

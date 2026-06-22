@@ -3,12 +3,15 @@ package net.fourletters.server.service;
 import net.fourletters.dto.*;
 import net.fourletters.server.broker.ServerRabbitMqService;
 import net.fourletters.server.model.InboxMessage;
+import net.fourletters.server.model.InboxMessageId;
 import net.fourletters.server.repository.InboxMessageRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -32,6 +35,7 @@ public class InboxService {
 
     private final ServerRabbitMqService rabbitMqService;
     private final InboxMessageRepository inboxRepository;
+    private final GroupService groupService;
 
     /** Hold window length */
     private final Duration holdWindow;
@@ -50,32 +54,82 @@ public class InboxService {
 
     public InboxService(ServerRabbitMqService rabbitMqService,
                         InboxMessageRepository inboxRepository,
+                        GroupService groupService,
                         PendingReceipts pendingReceipts,
                         @Value("${inbox.hold-window-seconds:30}") long holdWindowSeconds) {
         this.rabbitMqService = rabbitMqService;
         this.inboxRepository = inboxRepository;
+        this.groupService = groupService;
         this.pendingReceipts = pendingReceipts;
         this.holdWindow = Duration.ofSeconds(holdWindowSeconds);
     }
 
     /**
      * Accept an outgoing message: stamp the authenticated sender, retain it in the hot tier,
-     * and publish it for live delivery.
+     * and publish it for live delivery. A 1:1 message produces a single recipient copy; a group
+     * message (carrying {@code groupId}) is fanned out to one independent copy per current member
+     * — excluding the sender — each sharing the client-generated {@code messageId} and carrying the
+     * group's {@code groupId}/{@code epoch}. Each copy is held, published, and later receipted on
+     * its own, so a member's ack only clears that member's copy.
      */
     public AcceptedResponse accept(EncryptedMessage message, UUID senderId) {
         // senderId is authoritative from the session; any client-provided value is ignored.
         message.setSenderId(senderId);
 
-        hotTier.store(message);
-
-        rabbitMqService.publishMessage(message);
-        logger.debug("Accepted message {} for recipient {}", message.getMessageId(), message.getRecipientId());
+        if (message.getGroupId() != null) {
+            acceptGroup(message, senderId);
+        } else {
+            acceptOneToOne(message);
+        }
 
         AcceptedResponse response = new AcceptedResponse();
         response.setMessageId(message.getMessageId());
         response.setStatus(AcceptedResponse.StatusEnum.ACCEPTED);
         response.setServerStartedAt(serverStartedAt);
         return response;
+    }
+
+    /** Hold and publish a single recipient copy. */
+    private void acceptOneToOne(EncryptedMessage message) {
+        hotTier.store(message);
+        rabbitMqService.publishMessage(message);
+        logger.debug("Accepted message {} for recipient {}", message.getMessageId(), message.getRecipientId());
+    }
+
+    /**
+     * Fan a group message out to every current member except the sender. The sender must be a
+     * member; the resulting per-member copies are independent inbox rows keyed by
+     * {@code (messageId, recipientId)}.
+     */
+    private void acceptGroup(EncryptedMessage message, UUID senderId) {
+        UUID groupId = message.getGroupId();
+        List<UUID> members = groupService.membersOf(groupId);
+        if (!members.contains(senderId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "sender is not a member of the group");
+        }
+        for (UUID memberId : members) {
+            if (memberId.equals(senderId)) {
+                continue; // the sender already holds its own copy
+            }
+            EncryptedMessage copy = fanOutCopy(message, memberId);
+            hotTier.store(copy);
+            rabbitMqService.publishMessage(copy);
+        }
+        logger.debug("Fanned group message {} (group {}, epoch {}) out to {} members",
+                message.getMessageId(), groupId, message.getEpoch(), members.size());
+    }
+
+    /** A per-member copy of a group message: same id/payload/signature, member-specific recipient. */
+    private EncryptedMessage fanOutCopy(EncryptedMessage source, UUID recipientId) {
+        EncryptedMessage copy = new EncryptedMessage();
+        copy.setMessageId(source.getMessageId());
+        copy.setSenderId(source.getSenderId());
+        copy.setRecipientId(recipientId);
+        copy.setPayload(source.getPayload());
+        copy.setSignature(source.getSignature());
+        copy.setGroupId(source.getGroupId());
+        copy.setEpoch(source.getEpoch());
+        return copy;
     }
 
     /**
@@ -115,6 +169,7 @@ public class InboxService {
         InboxResponse response = new InboxResponse();
         response.setMessages(messages);
         response.setReceipts(pendingReceipts.drain(userId));
+        response.setGroupKeys(groupService.drainGroupKeysFor(userId));
         response.setServerStartedAt(serverStartedAt);
         return response;
     }
@@ -156,9 +211,11 @@ public class InboxService {
         if (stored != null) {
             return stored.getSenderId();
         }
-        InboxMessage row = inboxRepository.findById(messageId).orElse(null);
-        if (row != null && recipientId.equals(row.getRecipientId())) {
-            inboxRepository.deleteByMessageId(messageId);
+        InboxMessage row = inboxRepository
+                .findById(new InboxMessageId(messageId, recipientId))
+                .orElse(null);
+        if (row != null) {
+            inboxRepository.deleteByMessageIdAndRecipientId(messageId, recipientId);
             return row.getSenderId();
         }
         return null;
@@ -174,9 +231,9 @@ public class InboxService {
     @Scheduled(fixedDelayString = "${inbox.flush-interval-ms:5000}")
     void flushExpired() {
         Instant cutoff = Instant.now().minus(holdWindow);
-        for (UUID messageId : hotTier.expiredMessageIds(cutoff)) {
+        for (HotTierStorage.MessageKey key : hotTier.expiredKeys(cutoff)) {
             // Atomically claim the message and get the copy to persist;
-            EncryptedMessage message = hotTier.claimForFlush(messageId);
+            EncryptedMessage message = hotTier.claimForFlush(key);
             if (message == null) {
                 continue;
             }
@@ -185,12 +242,12 @@ public class InboxService {
                 inboxRepository.save(InboxMessage.from(message));
                 hotTier.evict(message);
                 logger.debug("Flushed message {} for recipient {} to durable inbox",
-                        messageId, message.getRecipientId());
+                        key.messageId(), message.getRecipientId());
             } catch (RuntimeException e) {
                 // Persist failed: release the claim and leave the hot copy in place so the
                 // next sweep (or an incoming receipt) retries. Sender's outbox is the backup.
                 hotTier.releaseClaim(message);
-                logger.warn("Failed to flush message {} to durable inbox; will retry", messageId, e);
+                logger.warn("Failed to flush message {} to durable inbox; will retry", key.messageId(), e);
             }
         }
     }

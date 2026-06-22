@@ -37,7 +37,7 @@ public class CommonSecurityConfigurator {
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
                     configuration.setAllowedOriginPatterns(this.allowedOriginPatterns);
-                    configuration.setAllowedMethods(Arrays.asList("GET","HEAD","POST","PUT","OPTIONS"));
+                    configuration.setAllowedMethods(Arrays.asList("GET","HEAD","POST","PUT","PATCH","DELETE","OPTIONS"));
                     configuration.setAllowedHeaders(List.of("*"));
                     configuration.setAllowCredentials(true);
                     return configuration;

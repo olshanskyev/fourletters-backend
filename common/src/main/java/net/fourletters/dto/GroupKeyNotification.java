@@ -21,78 +21,77 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.UUID;
-import net.fourletters.dto.PublicKeySet;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * KeysResponse
+ * Payload of a groupKeyRotated WS event.
  */
 @JsonPropertyOrder({
-  KeysResponse.JSON_PROPERTY_USER_ID,
-  KeysResponse.JSON_PROPERTY_KEYS
+  GroupKeyNotification.JSON_PROPERTY_GROUP_ID,
+  GroupKeyNotification.JSON_PROPERTY_EPOCH
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-22T14:10:45.096494+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class KeysResponse {
-  public static final String JSON_PROPERTY_USER_ID = "userId";
+public class GroupKeyNotification {
+  public static final String JSON_PROPERTY_GROUP_ID = "groupId";
   @jakarta.annotation.Nonnull
-  private UUID userId;
+  private UUID groupId;
 
-  public static final String JSON_PROPERTY_KEYS = "keys";
+  public static final String JSON_PROPERTY_EPOCH = "epoch";
   @jakarta.annotation.Nonnull
-  private PublicKeySet keys;
+  private Long epoch;
 
-  public KeysResponse() {
+  public GroupKeyNotification() {
   }
 
-  public KeysResponse userId(@jakarta.annotation.Nonnull UUID userId) {
+  public GroupKeyNotification groupId(@jakarta.annotation.Nonnull UUID groupId) {
     
-    this.userId = userId;
+    this.groupId = groupId;
     return this;
   }
 
   /**
-   * The user id these public keys belong to.
-   * @return userId
+   * The group whose key rotated.
+   * @return groupId
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_USER_ID, required = true)
+  @JsonProperty(value = JSON_PROPERTY_GROUP_ID, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public UUID getUserId() {
-    return userId;
+  public UUID getGroupId() {
+    return groupId;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_USER_ID, required = true)
+  @JsonProperty(value = JSON_PROPERTY_GROUP_ID, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setUserId(@jakarta.annotation.Nonnull UUID userId) {
-    this.userId = userId;
+  public void setGroupId(@jakarta.annotation.Nonnull UUID groupId) {
+    this.groupId = groupId;
   }
 
-  public KeysResponse keys(@jakarta.annotation.Nonnull PublicKeySet keys) {
+  public GroupKeyNotification epoch(@jakarta.annotation.Nonnull Long epoch) {
     
-    this.keys = keys;
+    this.epoch = epoch;
     return this;
   }
 
   /**
-   * Get keys
-   * @return keys
+   * The new current epoch.
+   * @return epoch
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
+  @JsonProperty(value = JSON_PROPERTY_EPOCH, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public PublicKeySet getKeys() {
-    return keys;
+  public Long getEpoch() {
+    return epoch;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
+  @JsonProperty(value = JSON_PROPERTY_EPOCH, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setKeys(@jakarta.annotation.Nonnull PublicKeySet keys) {
-    this.keys = keys;
+  public void setEpoch(@jakarta.annotation.Nonnull Long epoch) {
+    this.epoch = epoch;
   }
 
 
@@ -104,22 +103,22 @@ public class KeysResponse {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    KeysResponse keysResponse = (KeysResponse) o;
-    return Objects.equals(this.userId, keysResponse.userId) &&
-        Objects.equals(this.keys, keysResponse.keys);
+    GroupKeyNotification groupKeyNotification = (GroupKeyNotification) o;
+    return Objects.equals(this.groupId, groupKeyNotification.groupId) &&
+        Objects.equals(this.epoch, groupKeyNotification.epoch);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(userId, keys);
+    return Objects.hash(groupId, epoch);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class KeysResponse {\n");
-    sb.append("    userId: ").append(toIndentedString(userId)).append("\n");
-    sb.append("    keys: ").append(toIndentedString(keys)).append("\n");
+    sb.append("class GroupKeyNotification {\n");
+    sb.append("    groupId: ").append(toIndentedString(groupId)).append("\n");
+    sb.append("    epoch: ").append(toIndentedString(epoch)).append("\n");
     sb.append("}");
     return sb.toString();
   }

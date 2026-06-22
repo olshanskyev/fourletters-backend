@@ -20,26 +20,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import net.fourletters.dto.ReceiptData;
+import net.fourletters.dto.GroupKeyNotification;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * WS push: a delivery/read notification relayed live to the original sender.
+ * WS push: a content-free nudge that a group&#39;s key rotated to a new epoch. The member refetches its wrapped key (live blob, GET /groups/{id}/keys, or the next /inbox groupKeys pull). The group key itself is never carried over this channel.
  */
 @JsonPropertyOrder({
-  ReceiptEvent.JSON_PROPERTY_EVENT,
-  ReceiptEvent.JSON_PROPERTY_DATA
+  GroupKeyEvent.JSON_PROPERTY_EVENT,
+  GroupKeyEvent.JSON_PROPERTY_DATA
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-22T14:10:45.096494+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class ReceiptEvent {
+public class GroupKeyEvent {
   /**
    * Gets or Sets event
    */
   public enum EventEnum {
-    MESSAGE_DELIVERED(String.valueOf("messageDelivered")),
-    
-    MESSAGE_READ(String.valueOf("messageRead"));
+    GROUP_KEY_ROTATED(String.valueOf("groupKeyRotated"));
 
     private String value;
 
@@ -74,12 +72,12 @@ public class ReceiptEvent {
 
   public static final String JSON_PROPERTY_DATA = "data";
   @jakarta.annotation.Nonnull
-  private ReceiptData data;
+  private GroupKeyNotification data;
 
-  public ReceiptEvent() {
+  public GroupKeyEvent() {
   }
 
-  public ReceiptEvent event(@jakarta.annotation.Nonnull EventEnum event) {
+  public GroupKeyEvent event(@jakarta.annotation.Nonnull EventEnum event) {
     
     this.event = event;
     return this;
@@ -104,7 +102,7 @@ public class ReceiptEvent {
     this.event = event;
   }
 
-  public ReceiptEvent data(@jakarta.annotation.Nonnull ReceiptData data) {
+  public GroupKeyEvent data(@jakarta.annotation.Nonnull GroupKeyNotification data) {
     
     this.data = data;
     return this;
@@ -118,14 +116,14 @@ public class ReceiptEvent {
   @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public ReceiptData getData() {
+  public GroupKeyNotification getData() {
     return data;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setData(@jakarta.annotation.Nonnull ReceiptData data) {
+  public void setData(@jakarta.annotation.Nonnull GroupKeyNotification data) {
     this.data = data;
   }
 
@@ -138,9 +136,9 @@ public class ReceiptEvent {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ReceiptEvent receiptEvent = (ReceiptEvent) o;
-    return Objects.equals(this.event, receiptEvent.event) &&
-        Objects.equals(this.data, receiptEvent.data);
+    GroupKeyEvent groupKeyEvent = (GroupKeyEvent) o;
+    return Objects.equals(this.event, groupKeyEvent.event) &&
+        Objects.equals(this.data, groupKeyEvent.data);
   }
 
   @Override
@@ -151,7 +149,7 @@ public class ReceiptEvent {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class ReceiptEvent {\n");
+    sb.append("class GroupKeyEvent {\n");
     sb.append("    event: ").append(toIndentedString(event)).append("\n");
     sb.append("    data: ").append(toIndentedString(data)).append("\n");
     sb.append("}");

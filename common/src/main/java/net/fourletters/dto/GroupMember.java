@@ -21,38 +21,37 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.UUID;
-import net.fourletters.dto.PublicKeySet;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * KeysResponse
+ * A member of a group.
  */
 @JsonPropertyOrder({
-  KeysResponse.JSON_PROPERTY_USER_ID,
-  KeysResponse.JSON_PROPERTY_KEYS
+  GroupMember.JSON_PROPERTY_USER_ID,
+  GroupMember.JSON_PROPERTY_JOINED_AT
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-22T14:10:45.096494+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class KeysResponse {
+public class GroupMember {
   public static final String JSON_PROPERTY_USER_ID = "userId";
   @jakarta.annotation.Nonnull
   private UUID userId;
 
-  public static final String JSON_PROPERTY_KEYS = "keys";
-  @jakarta.annotation.Nonnull
-  private PublicKeySet keys;
+  public static final String JSON_PROPERTY_JOINED_AT = "joinedAt";
+  @jakarta.annotation.Nullable
+  private Long joinedAt;
 
-  public KeysResponse() {
+  public GroupMember() {
   }
 
-  public KeysResponse userId(@jakarta.annotation.Nonnull UUID userId) {
+  public GroupMember userId(@jakarta.annotation.Nonnull UUID userId) {
     
     this.userId = userId;
     return this;
   }
 
   /**
-   * The user id these public keys belong to.
+   * The member&#39;s user id.
    * @return userId
    */
   @jakarta.annotation.Nonnull
@@ -70,29 +69,29 @@ public class KeysResponse {
     this.userId = userId;
   }
 
-  public KeysResponse keys(@jakarta.annotation.Nonnull PublicKeySet keys) {
+  public GroupMember joinedAt(@jakarta.annotation.Nullable Long joinedAt) {
     
-    this.keys = keys;
+    this.joinedAt = joinedAt;
     return this;
   }
 
   /**
-   * Get keys
-   * @return keys
+   * Epoch milliseconds when the member joined the group.
+   * @return joinedAt
    */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_JOINED_AT, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
 
-  public PublicKeySet getKeys() {
-    return keys;
+  public Long getJoinedAt() {
+    return joinedAt;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setKeys(@jakarta.annotation.Nonnull PublicKeySet keys) {
-    this.keys = keys;
+  @JsonProperty(value = JSON_PROPERTY_JOINED_AT, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setJoinedAt(@jakarta.annotation.Nullable Long joinedAt) {
+    this.joinedAt = joinedAt;
   }
 
 
@@ -104,22 +103,22 @@ public class KeysResponse {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    KeysResponse keysResponse = (KeysResponse) o;
-    return Objects.equals(this.userId, keysResponse.userId) &&
-        Objects.equals(this.keys, keysResponse.keys);
+    GroupMember groupMember = (GroupMember) o;
+    return Objects.equals(this.userId, groupMember.userId) &&
+        Objects.equals(this.joinedAt, groupMember.joinedAt);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(userId, keys);
+    return Objects.hash(userId, joinedAt);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class KeysResponse {\n");
+    sb.append("class GroupMember {\n");
     sb.append("    userId: ").append(toIndentedString(userId)).append("\n");
-    sb.append("    keys: ").append(toIndentedString(keys)).append("\n");
+    sb.append("    joinedAt: ").append(toIndentedString(joinedAt)).append("\n");
     sb.append("}");
     return sb.toString();
   }
