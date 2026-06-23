@@ -2,8 +2,6 @@ package net.fourletters.server.controller;
 
 import net.fourletters.dto.CreateGroupRequest;
 import net.fourletters.dto.Group;
-import net.fourletters.dto.GroupKeyDistribution;
-import net.fourletters.dto.GroupKeySet;
 import net.fourletters.dto.GroupSummary;
 import net.fourletters.dto.UpdateMembersRequest;
 import net.fourletters.server.service.GroupService;
@@ -17,16 +15,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.UUID;
 
 /**
- * Group lifecycle, roster administration, and sender-key distribution. Authorization (owner-only
- * actions, membership checks) and epoch compare-and-set are enforced in {@link GroupService};
- * validation/authz failures surface as {@code ResponseStatusException} with the documented status.
+ * Group lifecycle and roster administration. Authorization (owner-only actions, membership checks)
+ * is enforced in {@link GroupService}; validation/authz failures surface as
+ * {@code ResponseStatusException} with the documented status.
  */
 @RestController
 @RequestMapping("/groups")
@@ -83,25 +80,5 @@ public class GroupController {
         }
         groupService.leaveGroup(userId, groupId);
         return ResponseEntity.noContent().build();
-    }
-
-    @PostMapping(value = "/{groupId}/keys", produces = "application/json")
-    public ResponseEntity<Group> rotateGroupKey(@PathVariable("groupId") UUID groupId,
-                                                @RequestBody GroupKeyDistribution distribution) {
-        UUID userId = SecurityUtils.currentUserId();
-        if (userId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        return ResponseEntity.ok(groupService.rotateGroupKey(userId, groupId, distribution));
-    }
-
-    @GetMapping(value = "/{groupId}/keys", produces = "application/json")
-    public ResponseEntity<GroupKeySet> getGroupKey(@PathVariable("groupId") UUID groupId,
-                                                   @RequestParam(value = "epoch", required = false) Long epoch) {
-        UUID userId = SecurityUtils.currentUserId();
-        if (userId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        return ResponseEntity.ok(groupService.getGroupKey(userId, groupId, epoch));
     }
 }

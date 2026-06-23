@@ -84,13 +84,6 @@ public class ServerRabbitMqService {
         send(RabbitMqTopology.ROUTING_KEY_PREFIX + senderId, event, event.getData().getMessageId(), true);
     }
 
-    /**
-     * Nudge a group member that a new key epoch is available, routed to their live stream.
-     */
-    public void publishGroupKeyEvent(UUID memberId, GroupKeyEvent event) {
-        send(RabbitMqTopology.ROUTING_KEY_PREFIX + memberId, event, event.getData().getGroupId(), false);
-    }
-
     private void send(String routingKey, Object body, Object idForLog, boolean receipt) {
         try {
             String json = objectMapper.writeValueAsString(body);

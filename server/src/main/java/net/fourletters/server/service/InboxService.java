@@ -8,10 +8,8 @@ import net.fourletters.server.repository.InboxMessageRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -35,7 +33,6 @@ public class InboxService {
 
     private final ServerRabbitMqService rabbitMqService;
     private final InboxMessageRepository inboxRepository;
-    private final GroupService groupService;
 
     /** Hold window length */
     private final Duration holdWindow;
@@ -54,82 +51,34 @@ public class InboxService {
 
     public InboxService(ServerRabbitMqService rabbitMqService,
                         InboxMessageRepository inboxRepository,
-                        GroupService groupService,
                         PendingReceipts pendingReceipts,
                         @Value("${inbox.hold-window-seconds:30}") long holdWindowSeconds) {
         this.rabbitMqService = rabbitMqService;
         this.inboxRepository = inboxRepository;
-        this.groupService = groupService;
         this.pendingReceipts = pendingReceipts;
         this.holdWindow = Duration.ofSeconds(holdWindowSeconds);
     }
 
     /**
-     * Accept an outgoing message: stamp the authenticated sender, retain it in the hot tier,
-     * and publish it for live delivery. A 1:1 message produces a single recipient copy; a group
-     * message (carrying {@code groupId}) is fanned out to one independent copy per current member
-     * — excluding the sender — each sharing the client-generated {@code messageId} and carrying the
-     * group's {@code groupId}/{@code epoch}. Each copy is held, published, and later receipted on
-     * its own, so a member's ack only clears that member's copy.
+     * Accept an outgoing message: stamp the authenticated sender, retain it in the hot tier, and
+     * publish it for live delivery. Every message is a single recipient copy. A group message is
+     * just such a 1:1 copy that also carries a {@code groupId} for conversation threading — the
+     * client fans a group send out as one independent copy per member, each posted separately and
+     * receipted on its own.
      */
     public AcceptedResponse accept(EncryptedMessage message, UUID senderId) {
         // senderId is authoritative from the session; any client-provided value is ignored.
         message.setSenderId(senderId);
 
-        if (message.getGroupId() != null) {
-            acceptGroup(message, senderId);
-        } else {
-            acceptOneToOne(message);
-        }
+        hotTier.store(message);
+        rabbitMqService.publishMessage(message);
+        logger.debug("Accepted message {} for recipient {}", message.getMessageId(), message.getRecipientId());
 
         AcceptedResponse response = new AcceptedResponse();
         response.setMessageId(message.getMessageId());
         response.setStatus(AcceptedResponse.StatusEnum.ACCEPTED);
         response.setServerStartedAt(serverStartedAt);
         return response;
-    }
-
-    /** Hold and publish a single recipient copy. */
-    private void acceptOneToOne(EncryptedMessage message) {
-        hotTier.store(message);
-        rabbitMqService.publishMessage(message);
-        logger.debug("Accepted message {} for recipient {}", message.getMessageId(), message.getRecipientId());
-    }
-
-    /**
-     * Fan a group message out to every current member except the sender. The sender must be a
-     * member; the resulting per-member copies are independent inbox rows keyed by
-     * {@code (messageId, recipientId)}.
-     */
-    private void acceptGroup(EncryptedMessage message, UUID senderId) {
-        UUID groupId = message.getGroupId();
-        List<UUID> members = groupService.membersOf(groupId);
-        if (!members.contains(senderId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "sender is not a member of the group");
-        }
-        for (UUID memberId : members) {
-            if (memberId.equals(senderId)) {
-                continue; // the sender already holds its own copy
-            }
-            EncryptedMessage copy = fanOutCopy(message, memberId);
-            hotTier.store(copy);
-            rabbitMqService.publishMessage(copy);
-        }
-        logger.debug("Fanned group message {} (group {}, epoch {}) out to {} members",
-                message.getMessageId(), groupId, message.getEpoch(), members.size());
-    }
-
-    /** A per-member copy of a group message: same id/payload/signature, member-specific recipient. */
-    private EncryptedMessage fanOutCopy(EncryptedMessage source, UUID recipientId) {
-        EncryptedMessage copy = new EncryptedMessage();
-        copy.setMessageId(source.getMessageId());
-        copy.setSenderId(source.getSenderId());
-        copy.setRecipientId(recipientId);
-        copy.setPayload(source.getPayload());
-        copy.setSignature(source.getSignature());
-        copy.setGroupId(source.getGroupId());
-        copy.setEpoch(source.getEpoch());
-        return copy;
     }
 
     /**
@@ -169,17 +118,15 @@ public class InboxService {
         InboxResponse response = new InboxResponse();
         response.setMessages(messages);
         response.setReceipts(pendingReceipts.drain(userId));
-        response.setGroupKeys(groupService.drainGroupKeysFor(userId));
         response.setServerStartedAt(serverStartedAt);
         return response;
     }
 
     /**
-     * Record a delivery/read receipt from the authenticated recipient: drop the retained copy
-     * (on the first receipt — delivery is satisfied once acknowledged) and relay the receipt
-     * to the original sender. Relaying uses the sender named in the receipt, so a second
-     * receipt (e.g. {@code read} arriving after {@code delivered}, in either order) is still
-     * relayed after the copy has been dropped. Idempotent for repeats.
+     * Record a delivery/read/undecryptable receipt from the authenticated recipient: drop the
+     * retained copy (on the first receipt — once acknowledged the Server need not keep it) and
+     * relay the receipt to the original sender.
+     * Idempotent for repeats.
      */
     public void recordReceipt(UUID recipientId, DeliveryReceipt receipt) {
         UUID messageId = receipt.getMessageId();
@@ -260,13 +207,22 @@ public class InboxService {
         data.setSignature(signature);
         data.setType(type);
         ReceiptEvent event = new ReceiptEvent();
-        event.setEvent(type == ReceiptType.READ
-                ? ReceiptEvent.EventEnum.MESSAGE_READ
-                : ReceiptEvent.EventEnum.MESSAGE_DELIVERED);
+        event.setEvent(eventTypeFor(type));
 
         event.setData(data);
 
         rabbitMqService.publishReceipt(senderId, event);
         logger.debug("Dropped message {} on {} receipt; relayed to sender {}", messageId, type, senderId);
+    }
+
+    /**
+     * Map a receipt type to its live WS relay event.
+     */
+    private static ReceiptEvent.EventEnum eventTypeFor(ReceiptType type) {
+        return switch (type) {
+            case READ -> ReceiptEvent.EventEnum.MESSAGE_READ;
+            case UNDECRYPTABLE -> ReceiptEvent.EventEnum.MESSAGE_UNDECRYPTABLE;
+            case DELIVERED -> ReceiptEvent.EventEnum.MESSAGE_DELIVERED;
+        };
     }
 }

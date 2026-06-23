@@ -24,19 +24,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import net.fourletters.dto.WrappedGroupKey;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * Creates a group with the caller as owner and an initial epoch-0 key set wrapped to every member.
+ * Creates a group with the caller as owner and the given initial roster.
  */
 @JsonPropertyOrder({
   CreateGroupRequest.JSON_PROPERTY_NAME,
-  CreateGroupRequest.JSON_PROPERTY_MEMBERS,
-  CreateGroupRequest.JSON_PROPERTY_KEYS
+  CreateGroupRequest.JSON_PROPERTY_MEMBERS
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-22T14:10:45.096494+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-23T14:46:26.500796900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class CreateGroupRequest {
   public static final String JSON_PROPERTY_NAME = "name";
   @jakarta.annotation.Nonnull
@@ -45,10 +43,6 @@ public class CreateGroupRequest {
   public static final String JSON_PROPERTY_MEMBERS = "members";
   @jakarta.annotation.Nonnull
   private List<UUID> members = new ArrayList<>();
-
-  public static final String JSON_PROPERTY_KEYS = "keys";
-  @jakarta.annotation.Nonnull
-  private List<WrappedGroupKey> keys = new ArrayList<>();
 
   public CreateGroupRequest() {
   }
@@ -111,39 +105,6 @@ public class CreateGroupRequest {
     this.members = members;
   }
 
-  public CreateGroupRequest keys(@jakarta.annotation.Nonnull List<WrappedGroupKey> keys) {
-    
-    this.keys = keys;
-    return this;
-  }
-
-  public CreateGroupRequest addKeysItem(WrappedGroupKey keysItem) {
-    if (this.keys == null) {
-      this.keys = new ArrayList<>();
-    }
-    this.keys.add(keysItem);
-    return this;
-  }
-
-  /**
-   * Epoch-0 group key wrapped to every initial member (including the owner).
-   * @return keys
-   */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-
-  public List<WrappedGroupKey> getKeys() {
-    return keys;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setKeys(@jakarta.annotation.Nonnull List<WrappedGroupKey> keys) {
-    this.keys = keys;
-  }
-
 
   @Override
   public boolean equals(Object o) {
@@ -155,13 +116,12 @@ public class CreateGroupRequest {
     }
     CreateGroupRequest createGroupRequest = (CreateGroupRequest) o;
     return Objects.equals(this.name, createGroupRequest.name) &&
-        Objects.equals(this.members, createGroupRequest.members) &&
-        Objects.equals(this.keys, createGroupRequest.keys);
+        Objects.equals(this.members, createGroupRequest.members);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, members, keys);
+    return Objects.hash(name, members);
   }
 
   @Override
@@ -170,7 +130,6 @@ public class CreateGroupRequest {
     sb.append("class CreateGroupRequest {\n");
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    members: ").append(toIndentedString(members)).append("\n");
-    sb.append("    keys: ").append(toIndentedString(keys)).append("\n");
     sb.append("}");
     return sb.toString();
   }

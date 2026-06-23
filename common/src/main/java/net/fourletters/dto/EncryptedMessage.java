@@ -33,10 +33,9 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   EncryptedMessage.JSON_PROPERTY_SENDER_ID,
   EncryptedMessage.JSON_PROPERTY_PAYLOAD,
   EncryptedMessage.JSON_PROPERTY_SIGNATURE,
-  EncryptedMessage.JSON_PROPERTY_GROUP_ID,
-  EncryptedMessage.JSON_PROPERTY_EPOCH
+  EncryptedMessage.JSON_PROPERTY_GROUP_ID
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-22T14:10:45.096494+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-23T14:46:26.500796900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class EncryptedMessage {
   public static final String JSON_PROPERTY_MESSAGE_ID = "messageId";
   @jakarta.annotation.Nonnull
@@ -61,10 +60,6 @@ public class EncryptedMessage {
   public static final String JSON_PROPERTY_GROUP_ID = "groupId";
   @jakarta.annotation.Nullable
   private UUID groupId;
-
-  public static final String JSON_PROPERTY_EPOCH = "epoch";
-  @jakarta.annotation.Nullable
-  private Long epoch;
 
   public EncryptedMessage() {
   }
@@ -151,7 +146,7 @@ public class EncryptedMessage {
   }
 
   /**
-   * E2E encrypted message payload (Base64). For a 1:1 message this is per-message ephemeral-ECDH ciphertext; for a group message it is ciphertext under the group&#39;s symmetric epoch key.
+   * E2E encrypted message payload (Base64). Per-message ephemeral-ECDH ciphertext sealed to the recipient&#39;s encryption key.
    * @return payload
    */
   @jakarta.annotation.Nonnull
@@ -201,7 +196,7 @@ public class EncryptedMessage {
   }
 
   /**
-   * Present only for group messages. Identifies the group; the Server uses it to resolve the roster and fan out one stored copy per member. Omitted for 1:1 messages.
+   * Present only for group messages. Identifies the group so the recipient threads the message into the group conversation. The sender encrypts and sends one independent 1:1 copy per member; the Server treats each copy as an ordinary 1:1 message. Omitted for 1:1 messages.
    * @return groupId
    */
   @jakarta.annotation.Nullable
@@ -219,31 +214,6 @@ public class EncryptedMessage {
     this.groupId = groupId;
   }
 
-  public EncryptedMessage epoch(@jakarta.annotation.Nullable Long epoch) {
-    
-    this.epoch = epoch;
-    return this;
-  }
-
-  /**
-   * Present only for group messages. The group-key epoch (version) the payload was encrypted under, so the recipient selects the matching key. Omitted for 1:1 messages.
-   * @return epoch
-   */
-  @jakarta.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_EPOCH, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-
-  public Long getEpoch() {
-    return epoch;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_EPOCH, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setEpoch(@jakarta.annotation.Nullable Long epoch) {
-    this.epoch = epoch;
-  }
-
 
   @Override
   public boolean equals(Object o) {
@@ -259,13 +229,12 @@ public class EncryptedMessage {
         Objects.equals(this.senderId, encryptedMessage.senderId) &&
         Objects.equals(this.payload, encryptedMessage.payload) &&
         Objects.equals(this.signature, encryptedMessage.signature) &&
-        Objects.equals(this.groupId, encryptedMessage.groupId) &&
-        Objects.equals(this.epoch, encryptedMessage.epoch);
+        Objects.equals(this.groupId, encryptedMessage.groupId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(messageId, recipientId, senderId, payload, signature, groupId, epoch);
+    return Objects.hash(messageId, recipientId, senderId, payload, signature, groupId);
   }
 
   @Override
@@ -278,7 +247,6 @@ public class EncryptedMessage {
     sb.append("    payload: ").append(toIndentedString(payload)).append("\n");
     sb.append("    signature: ").append(toIndentedString(signature)).append("\n");
     sb.append("    groupId: ").append(toIndentedString(groupId)).append("\n");
-    sb.append("    epoch: ").append(toIndentedString(epoch)).append("\n");
     sb.append("}");
     return sb.toString();
   }

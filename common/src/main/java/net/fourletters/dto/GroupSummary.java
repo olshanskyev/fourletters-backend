@@ -30,10 +30,9 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 @JsonPropertyOrder({
   GroupSummary.JSON_PROPERTY_ID,
   GroupSummary.JSON_PROPERTY_NAME,
-  GroupSummary.JSON_PROPERTY_OWNER_ID,
-  GroupSummary.JSON_PROPERTY_EPOCH
+  GroupSummary.JSON_PROPERTY_OWNER_ID
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-22T14:10:45.096494+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-23T14:46:26.500796900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class GroupSummary {
   public static final String JSON_PROPERTY_ID = "id";
   @jakarta.annotation.Nonnull
@@ -46,10 +45,6 @@ public class GroupSummary {
   public static final String JSON_PROPERTY_OWNER_ID = "ownerId";
   @jakarta.annotation.Nonnull
   private UUID ownerId;
-
-  public static final String JSON_PROPERTY_EPOCH = "epoch";
-  @jakarta.annotation.Nonnull
-  private Long epoch;
 
   public GroupSummary() {
   }
@@ -129,31 +124,6 @@ public class GroupSummary {
     this.ownerId = ownerId;
   }
 
-  public GroupSummary epoch(@jakarta.annotation.Nonnull Long epoch) {
-    
-    this.epoch = epoch;
-    return this;
-  }
-
-  /**
-   * Get epoch
-   * @return epoch
-   */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_EPOCH, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-
-  public Long getEpoch() {
-    return epoch;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_EPOCH, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setEpoch(@jakarta.annotation.Nonnull Long epoch) {
-    this.epoch = epoch;
-  }
-
 
   @Override
   public boolean equals(Object o) {
@@ -166,13 +136,12 @@ public class GroupSummary {
     GroupSummary groupSummary = (GroupSummary) o;
     return Objects.equals(this.id, groupSummary.id) &&
         Objects.equals(this.name, groupSummary.name) &&
-        Objects.equals(this.ownerId, groupSummary.ownerId) &&
-        Objects.equals(this.epoch, groupSummary.epoch);
+        Objects.equals(this.ownerId, groupSummary.ownerId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, name, ownerId, epoch);
+    return Objects.hash(id, name, ownerId);
   }
 
   @Override
@@ -182,7 +151,6 @@ public class GroupSummary {
     sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    ownerId: ").append(toIndentedString(ownerId)).append("\n");
-    sb.append("    epoch: ").append(toIndentedString(epoch)).append("\n");
     sb.append("}");
     return sb.toString();
   }

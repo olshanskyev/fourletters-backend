@@ -29,18 +29,17 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * A group conversation. The Server owns the roster and the current epoch number but never the group key (it only relays opaque wrapped key blobs).
+ * A group conversation. The Server owns the roster; messages are sent as one independent 1:1 copy per member, so the Server never holds any group key material.
  */
 @JsonPropertyOrder({
   Group.JSON_PROPERTY_ID,
   Group.JSON_PROPERTY_NAME,
   Group.JSON_PROPERTY_OWNER_ID,
-  Group.JSON_PROPERTY_EPOCH,
   Group.JSON_PROPERTY_MEMBERS,
   Group.JSON_PROPERTY_CREATED_AT,
   Group.JSON_PROPERTY_UPDATED_AT
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-22T14:10:45.096494+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-23T14:46:26.500796900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class Group {
   public static final String JSON_PROPERTY_ID = "id";
   @jakarta.annotation.Nonnull
@@ -53,10 +52,6 @@ public class Group {
   public static final String JSON_PROPERTY_OWNER_ID = "ownerId";
   @jakarta.annotation.Nonnull
   private UUID ownerId;
-
-  public static final String JSON_PROPERTY_EPOCH = "epoch";
-  @jakarta.annotation.Nonnull
-  private Long epoch;
 
   public static final String JSON_PROPERTY_MEMBERS = "members";
   @jakarta.annotation.Nonnull
@@ -130,7 +125,7 @@ public class Group {
   }
 
   /**
-   * The group owner — the sole party permitted to change the roster and publish rotations.
+   * The group owner — the sole party permitted to change the roster.
    * @return ownerId
    */
   @jakarta.annotation.Nonnull
@@ -146,31 +141,6 @@ public class Group {
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public void setOwnerId(@jakarta.annotation.Nonnull UUID ownerId) {
     this.ownerId = ownerId;
-  }
-
-  public Group epoch(@jakarta.annotation.Nonnull Long epoch) {
-    
-    this.epoch = epoch;
-    return this;
-  }
-
-  /**
-   * The current group-key epoch (version). Incremented on every rotation (membership change or owner-initiated rekey).
-   * @return epoch
-   */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_EPOCH, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-
-  public Long getEpoch() {
-    return epoch;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_EPOCH, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setEpoch(@jakarta.annotation.Nonnull Long epoch) {
-    this.epoch = epoch;
   }
 
   public Group members(@jakarta.annotation.Nonnull List<GroupMember> members) {
@@ -238,7 +208,7 @@ public class Group {
   }
 
   /**
-   * Epoch milliseconds of the last roster/epoch change.
+   * Epoch milliseconds of the last roster change.
    * @return updatedAt
    */
   @jakarta.annotation.Nullable
@@ -269,7 +239,6 @@ public class Group {
     return Objects.equals(this.id, group.id) &&
         Objects.equals(this.name, group.name) &&
         Objects.equals(this.ownerId, group.ownerId) &&
-        Objects.equals(this.epoch, group.epoch) &&
         Objects.equals(this.members, group.members) &&
         Objects.equals(this.createdAt, group.createdAt) &&
         Objects.equals(this.updatedAt, group.updatedAt);
@@ -277,7 +246,7 @@ public class Group {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, name, ownerId, epoch, members, createdAt, updatedAt);
+    return Objects.hash(id, name, ownerId, members, createdAt, updatedAt);
   }
 
   @Override
@@ -287,7 +256,6 @@ public class Group {
     sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    ownerId: ").append(toIndentedString(ownerId)).append("\n");
-    sb.append("    epoch: ").append(toIndentedString(epoch)).append("\n");
     sb.append("    members: ").append(toIndentedString(members)).append("\n");
     sb.append("    createdAt: ").append(toIndentedString(createdAt)).append("\n");
     sb.append("    updatedAt: ").append(toIndentedString(updatedAt)).append("\n");

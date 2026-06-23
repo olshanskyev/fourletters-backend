@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * A messaging group. Metadata is intentionally minimal: a plaintext name, the owner (sole roster
- * admin), and the current key {@code epoch}. Membership lives in {@link GroupMember} and wrapped
- * per-epoch keys in {@link GroupKey}.
+ * A messaging group. Metadata is intentionally minimal: a plaintext name and the owner (sole
+ * roster admin). Membership lives in {@link GroupMember}. A group message is sent by the client as
+ * one independent 1:1 copy per member, so the Server holds no group key.
  */
 @Entity
 @Table(name = "groups")
@@ -28,10 +28,6 @@ public class Group {
 
     @Column(name = "owner_id", nullable = false)
     private UUID ownerId;
-
-    /** Current sender-key epoch; bumped on every membership change and explicit rotation. */
-    @Column(name = "epoch", nullable = false)
-    private long epoch;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -48,7 +44,6 @@ public class Group {
         summary.setId(id);
         summary.setName(name);
         summary.setOwnerId(ownerId);
-        summary.setEpoch(epoch);
         return summary;
     }
 
@@ -66,7 +61,6 @@ public class Group {
         dto.setId(id);
         dto.setName(name);
         dto.setOwnerId(ownerId);
-        dto.setEpoch(epoch);
         dto.setMembers(members);
         dto.setCreatedAt(createdAt.toEpochMilli());
         dto.setUpdatedAt(effectiveUpdatedAt.toEpochMilli());
@@ -81,9 +75,6 @@ public class Group {
 
     public UUID getOwnerId() { return ownerId; }
     public void setOwnerId(UUID ownerId) { this.ownerId = ownerId; }
-
-    public long getEpoch() { return epoch; }
-    public void setEpoch(long epoch) { this.epoch = epoch; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

@@ -32,7 +32,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   KeysResponse.JSON_PROPERTY_USER_ID,
   KeysResponse.JSON_PROPERTY_KEYS
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-22T14:10:45.096494+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-23T14:46:26.500796900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class KeysResponse {
   public static final String JSON_PROPERTY_USER_ID = "userId";
   @jakarta.annotation.Nonnull

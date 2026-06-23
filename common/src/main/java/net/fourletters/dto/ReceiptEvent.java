@@ -25,13 +25,13 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * WS push: a delivery/read notification relayed live to the original sender.
+ * WS push: a delivery/read/undecryptable notification relayed live to the original sender.
  */
 @JsonPropertyOrder({
   ReceiptEvent.JSON_PROPERTY_EVENT,
   ReceiptEvent.JSON_PROPERTY_DATA
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-22T14:10:45.096494+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-23T14:46:26.500796900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class ReceiptEvent {
   /**
    * Gets or Sets event
@@ -39,7 +39,9 @@ public class ReceiptEvent {
   public enum EventEnum {
     MESSAGE_DELIVERED(String.valueOf("messageDelivered")),
     
-    MESSAGE_READ(String.valueOf("messageRead"));
+    MESSAGE_READ(String.valueOf("messageRead")),
+    
+    MESSAGE_UNDECRYPTABLE(String.valueOf("messageUndecryptable"));
 
     private String value;
 

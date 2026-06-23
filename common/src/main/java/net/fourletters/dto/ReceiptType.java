@@ -22,13 +22,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
- * &#39;delivered&#39; &#x3D; the recipient device received and decrypted the message; &#39;read&#39; &#x3D; the user opened it.
+ * &#39;delivered&#39; &#x3D; the recipient device received and decrypted the message; &#39;read&#39; &#x3D; the user opened it; &#39;undecryptable&#39; &#x3D; the recipient received it but could not decrypt it (the message was encrypted to a stale public key, e.g. after the recipient logged in on a new device). A negative acknowledgement: it lets the Server drop the retained copy (no one can decrypt it) and prompts the original sender to re-fetch the recipient&#39;s current key and resend once.
  */
 public enum ReceiptType {
   
   DELIVERED("delivered"),
   
-  READ("read");
+  READ("read"),
+  
+  UNDECRYPTABLE("undecryptable");
 
   private String value;
 

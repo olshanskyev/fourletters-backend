@@ -24,20 +24,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import net.fourletters.dto.WrappedGroupKey;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * Owner-only roster change. Adding and/or removing members always rotates: the body carries the new epoch&#39;s full wrapped-key set for the resulting roster. Compare-and-swap on epoch.
+ * Owner-only roster change.
  */
 @JsonPropertyOrder({
   UpdateMembersRequest.JSON_PROPERTY_ADD,
-  UpdateMembersRequest.JSON_PROPERTY_REMOVE,
-  UpdateMembersRequest.JSON_PROPERTY_EPOCH,
-  UpdateMembersRequest.JSON_PROPERTY_KEYS
+  UpdateMembersRequest.JSON_PROPERTY_REMOVE
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-22T14:10:45.096494+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-23T14:46:26.500796900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class UpdateMembersRequest {
   public static final String JSON_PROPERTY_ADD = "add";
   @jakarta.annotation.Nullable
@@ -46,14 +43,6 @@ public class UpdateMembersRequest {
   public static final String JSON_PROPERTY_REMOVE = "remove";
   @jakarta.annotation.Nullable
   private List<UUID> remove = new ArrayList<>();
-
-  public static final String JSON_PROPERTY_EPOCH = "epoch";
-  @jakarta.annotation.Nonnull
-  private Long epoch;
-
-  public static final String JSON_PROPERTY_KEYS = "keys";
-  @jakarta.annotation.Nonnull
-  private List<WrappedGroupKey> keys = new ArrayList<>();
 
   public UpdateMembersRequest() {
   }
@@ -124,64 +113,6 @@ public class UpdateMembersRequest {
     this.remove = remove;
   }
 
-  public UpdateMembersRequest epoch(@jakarta.annotation.Nonnull Long epoch) {
-    
-    this.epoch = epoch;
-    return this;
-  }
-
-  /**
-   * The new epoch (must equal current epoch + 1). Rejected with 409 on mismatch.
-   * @return epoch
-   */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_EPOCH, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-
-  public Long getEpoch() {
-    return epoch;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_EPOCH, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setEpoch(@jakarta.annotation.Nonnull Long epoch) {
-    this.epoch = epoch;
-  }
-
-  public UpdateMembersRequest keys(@jakarta.annotation.Nonnull List<WrappedGroupKey> keys) {
-    
-    this.keys = keys;
-    return this;
-  }
-
-  public UpdateMembersRequest addKeysItem(WrappedGroupKey keysItem) {
-    if (this.keys == null) {
-      this.keys = new ArrayList<>();
-    }
-    this.keys.add(keysItem);
-    return this;
-  }
-
-  /**
-   * The new epoch key wrapped to exactly the resulting roster (after add/remove).
-   * @return keys
-   */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-
-  public List<WrappedGroupKey> getKeys() {
-    return keys;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setKeys(@jakarta.annotation.Nonnull List<WrappedGroupKey> keys) {
-    this.keys = keys;
-  }
-
 
   @Override
   public boolean equals(Object o) {
@@ -193,14 +124,12 @@ public class UpdateMembersRequest {
     }
     UpdateMembersRequest updateMembersRequest = (UpdateMembersRequest) o;
     return Objects.equals(this.add, updateMembersRequest.add) &&
-        Objects.equals(this.remove, updateMembersRequest.remove) &&
-        Objects.equals(this.epoch, updateMembersRequest.epoch) &&
-        Objects.equals(this.keys, updateMembersRequest.keys);
+        Objects.equals(this.remove, updateMembersRequest.remove);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(add, remove, epoch, keys);
+    return Objects.hash(add, remove);
   }
 
   @Override
@@ -209,8 +138,6 @@ public class UpdateMembersRequest {
     sb.append("class UpdateMembersRequest {\n");
     sb.append("    add: ").append(toIndentedString(add)).append("\n");
     sb.append("    remove: ").append(toIndentedString(remove)).append("\n");
-    sb.append("    epoch: ").append(toIndentedString(epoch)).append("\n");
-    sb.append("    keys: ").append(toIndentedString(keys)).append("\n");
     sb.append("}");
     return sb.toString();
   }

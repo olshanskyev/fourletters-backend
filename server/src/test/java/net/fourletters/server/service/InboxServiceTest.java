@@ -19,9 +19,9 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,8 +36,6 @@ class InboxServiceTest {
     private ServerRabbitMqService rabbitMqService;
     @Mock
     private InboxMessageRepository repository;
-    @Mock
-    private GroupService groupService;
 
     private InboxService service;
 
@@ -48,9 +46,8 @@ class InboxServiceTest {
     void setUp() {
         lenient().when(repository.findByRecipientIdOrderByCreatedAtAsc(any()))
                 .thenReturn(Collections.emptyList());
-        lenient().when(groupService.drainGroupKeysFor(any())).thenReturn(Collections.emptyList());
         // hold window of 0s so flushExpired() treats accepted messages as already expired.
-        service = new InboxService(rabbitMqService, repository, groupService, new PendingReceipts(), 0L);
+        service = new InboxService(rabbitMqService, repository, new PendingReceipts(), 0L);
     }
 
     private EncryptedMessage newMessage() {
@@ -158,47 +155,32 @@ class InboxServiceTest {
     }
 
     @Test
-    void groupMessageFansOutToMembersExceptSender() {
-        UUID groupId = UUID.randomUUID();
-        UUID memberA = UUID.randomUUID();
-        UUID memberB = UUID.randomUUID();
-        when(groupService.membersOf(groupId)).thenReturn(List.of(sender, memberA, memberB));
+    void undecryptableReceiptDropsCopyAndRelaysAsNegativeAck() {
+        EncryptedMessage m = newMessage();
+        AcceptedResponse accepted = service.accept(m, sender);
 
-        EncryptedMessage m = new EncryptedMessage();
-        m.setMessageId(UUID.randomUUID());
-        m.setGroupId(groupId);
-        m.setEpoch(3L);
-        m.setPayload("cipher");
-        m.setSignature("sig");
-        service.accept(m, sender);
+        DeliveryReceipt receipt = new DeliveryReceipt();
+        receipt.setMessageId(accepted.getMessageId());
+        receipt.setOriginalSenderId(sender);
+        receipt.setType(ReceiptType.UNDECRYPTABLE);
+        receipt.setSignature("sig");
+        service.recordReceipt(recipient, receipt);
 
-        // One published copy per member, excluding the sender, each carrying group context.
-        ArgumentCaptor<EncryptedMessage> captor = ArgumentCaptor.forClass(EncryptedMessage.class);
-        verify(rabbitMqService, times(2)).publishMessage(captor.capture());
-        assertThat(captor.getAllValues())
-                .extracting(EncryptedMessage::getRecipientId)
-                .containsExactlyInAnyOrder(memberA, memberB);
-        assertThat(captor.getAllValues())
-                .allSatisfy(copy -> {
-                    assertThat(copy.getMessageId()).isEqualTo(m.getMessageId());
-                    assertThat(copy.getGroupId()).isEqualTo(groupId);
-                    assertThat(copy.getEpoch()).isEqualTo(3L);
-                    assertThat(copy.getSenderId()).isEqualTo(sender);
-                });
-    }
+        // The copy is dropped while still in the hot tier (no key can decrypt it) — zero DB writes.
+        verify(repository, never()).save(any());
+        verify(repository, never()).deleteByMessageIdAndRecipientId(any(), any());
 
-    @Test
-    void groupKeysAreCarriedOnInbox() {
-        GroupKeySet keySet = new GroupKeySet();
-        keySet.setGroupId(UUID.randomUUID());
-        keySet.setEpoch(2L);
-        keySet.setWrappedKey("wrapped");
-        when(groupService.drainGroupKeysFor(recipient)).thenReturn(List.of(keySet));
+        // It is relayed to the sender as MESSAGE_UNDECRYPTABLE (not a delivery), preserving type.
+        ArgumentCaptor<ReceiptEvent> eventCaptor = ArgumentCaptor.forClass(ReceiptEvent.class);
+        verify(rabbitMqService).publishReceipt(eq(sender), eventCaptor.capture());
+        ReceiptEvent relayed = eventCaptor.getValue();
+        assertThat(relayed.getEvent()).isEqualTo(ReceiptEvent.EventEnum.MESSAGE_UNDECRYPTABLE);
+        assertThat(relayed.getData().getType()).isEqualTo(ReceiptType.UNDECRYPTABLE);
+        assertThat(relayed.getData().getMessageId()).isEqualTo(m.getMessageId());
+        assertThat(relayed.getData().getRecipientId()).isEqualTo(recipient);
 
-        InboxResponse response = service.getInbox(recipient);
-
-        assertThat(response.getGroupKeys()).hasSize(1);
-        assertThat(response.getGroupKeys().get(0).getWrappedKey()).isEqualTo("wrapped");
+        // The dropped copy is gone from the inbox afterward.
+        assertThat(service.getInbox(recipient).getMessages()).isEmpty();
     }
 }
 

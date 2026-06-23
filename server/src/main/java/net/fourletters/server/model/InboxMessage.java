@@ -15,9 +15,9 @@ import java.util.UUID;
  * it is not confirmed by a delivery receipt within the in-memory hold window. Rows are deleted
  * strictly upon a verified receipt, or read back via {@code GET /inbox}.
  *
- * <p>The key is composite {@code (messageId, recipientId)} so a group message — fanned out to one
- * row per member, all sharing the client-generated {@code messageId} — has an independent durable
- * row per member. {@code groupId} and {@code epoch} are {@code null} for 1:1 messages.
+ * <p>The key is composite {@code (messageId, recipientId)} so a group message — fanned out by the
+ * client to one copy per member, all sharing the {@code messageId} — has an independent durable
+ * row per member. {@code groupId} is {@code null} for 1:1 messages.
  */
 @Entity
 @Table(name = "inbox")
@@ -48,10 +48,6 @@ public class InboxMessage {
     @Column(name = "group_id")
     private UUID groupId;
 
-    /** Group-key epoch the payload was encrypted under; {@code null} for 1:1. */
-    @Column(name = "epoch")
-    private Long epoch;
-
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -67,7 +63,6 @@ public class InboxMessage {
         row.payload = message.getPayload();
         row.signature = message.getSignature();
         row.groupId = message.getGroupId();
-        row.epoch = message.getEpoch();
         row.createdAt = Instant.now();
         return row;
     }
@@ -81,7 +76,6 @@ public class InboxMessage {
         message.setPayload(payload);
         message.setSignature(signature);
         message.setGroupId(groupId);
-        message.setEpoch(epoch);
         return message;
     }
 
@@ -103,9 +97,6 @@ public class InboxMessage {
 
     public UUID getGroupId() { return groupId; }
     public void setGroupId(UUID groupId) { this.groupId = groupId; }
-
-    public Long getEpoch() { return epoch; }
-    public void setEpoch(Long epoch) { this.epoch = epoch; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

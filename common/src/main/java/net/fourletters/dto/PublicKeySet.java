@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   PublicKeySet.JSON_PROPERTY_ENCRYPTION_PUBLIC_KEY,
   PublicKeySet.JSON_PROPERTY_UPLOADED_AT
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-22T14:10:45.096494+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-23T14:46:26.500796900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class PublicKeySet {
   public static final String JSON_PROPERTY_SIGNING_PUBLIC_KEY = "signingPublicKey";
   @jakarta.annotation.Nonnull
