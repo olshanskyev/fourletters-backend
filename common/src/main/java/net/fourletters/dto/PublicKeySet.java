@@ -20,26 +20,38 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
+import net.fourletters.dto.OneTimePreKeyDto;
+import net.fourletters.dto.SignedPreKeyDto;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * PublicKeySet
+ * A user&#39;s Signal pre-key bundle as served by the directory: identity, registration id, signed pre-key, and at most one one-time pre-key (absent when the pool is exhausted).
  */
 @JsonPropertyOrder({
-  PublicKeySet.JSON_PROPERTY_SIGNING_PUBLIC_KEY,
-  PublicKeySet.JSON_PROPERTY_ENCRYPTION_PUBLIC_KEY,
+  PublicKeySet.JSON_PROPERTY_REGISTRATION_ID,
+  PublicKeySet.JSON_PROPERTY_IDENTITY_KEY,
+  PublicKeySet.JSON_PROPERTY_SIGNED_PRE_KEY,
+  PublicKeySet.JSON_PROPERTY_ONE_TIME_PRE_KEY,
   PublicKeySet.JSON_PROPERTY_UPLOADED_AT
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-23T14:46:26.500796900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-24T17:06:31.125825+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class PublicKeySet {
-  public static final String JSON_PROPERTY_SIGNING_PUBLIC_KEY = "signingPublicKey";
+  public static final String JSON_PROPERTY_REGISTRATION_ID = "registrationId";
   @jakarta.annotation.Nonnull
-  private String signingPublicKey;
+  private Integer registrationId;
 
-  public static final String JSON_PROPERTY_ENCRYPTION_PUBLIC_KEY = "encryptionPublicKey";
+  public static final String JSON_PROPERTY_IDENTITY_KEY = "identityKey";
   @jakarta.annotation.Nonnull
-  private String encryptionPublicKey;
+  private String identityKey;
+
+  public static final String JSON_PROPERTY_SIGNED_PRE_KEY = "signedPreKey";
+  @jakarta.annotation.Nonnull
+  private SignedPreKeyDto signedPreKey;
+
+  public static final String JSON_PROPERTY_ONE_TIME_PRE_KEY = "oneTimePreKey";
+  @jakarta.annotation.Nullable
+  private OneTimePreKeyDto oneTimePreKey;
 
   public static final String JSON_PROPERTY_UPLOADED_AT = "uploadedAt";
   @jakarta.annotation.Nonnull
@@ -48,54 +60,104 @@ public class PublicKeySet {
   public PublicKeySet() {
   }
 
-  public PublicKeySet signingPublicKey(@jakarta.annotation.Nonnull String signingPublicKey) {
+  public PublicKeySet registrationId(@jakarta.annotation.Nonnull Integer registrationId) {
     
-    this.signingPublicKey = signingPublicKey;
+    this.registrationId = registrationId;
     return this;
   }
 
   /**
-   * ECDSA P-256 public signing key (Base64 SPKI).
-   * @return signingPublicKey
+   * The user&#39;s Signal registration id.
+   * @return registrationId
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_SIGNING_PUBLIC_KEY, required = true)
+  @JsonProperty(value = JSON_PROPERTY_REGISTRATION_ID, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public String getSigningPublicKey() {
-    return signingPublicKey;
+  public Integer getRegistrationId() {
+    return registrationId;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_SIGNING_PUBLIC_KEY, required = true)
+  @JsonProperty(value = JSON_PROPERTY_REGISTRATION_ID, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setSigningPublicKey(@jakarta.annotation.Nonnull String signingPublicKey) {
-    this.signingPublicKey = signingPublicKey;
+  public void setRegistrationId(@jakarta.annotation.Nonnull Integer registrationId) {
+    this.registrationId = registrationId;
   }
 
-  public PublicKeySet encryptionPublicKey(@jakarta.annotation.Nonnull String encryptionPublicKey) {
+  public PublicKeySet identityKey(@jakarta.annotation.Nonnull String identityKey) {
     
-    this.encryptionPublicKey = encryptionPublicKey;
+    this.identityKey = identityKey;
     return this;
   }
 
   /**
-   * ECDH P-256 public encryption key (Base64 SPKI).
-   * @return encryptionPublicKey
+   * Long-lived Curve25519 identity public key (Base64).
+   * @return identityKey
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_ENCRYPTION_PUBLIC_KEY, required = true)
+  @JsonProperty(value = JSON_PROPERTY_IDENTITY_KEY, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public String getEncryptionPublicKey() {
-    return encryptionPublicKey;
+  public String getIdentityKey() {
+    return identityKey;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_ENCRYPTION_PUBLIC_KEY, required = true)
+  @JsonProperty(value = JSON_PROPERTY_IDENTITY_KEY, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setEncryptionPublicKey(@jakarta.annotation.Nonnull String encryptionPublicKey) {
-    this.encryptionPublicKey = encryptionPublicKey;
+  public void setIdentityKey(@jakarta.annotation.Nonnull String identityKey) {
+    this.identityKey = identityKey;
+  }
+
+  public PublicKeySet signedPreKey(@jakarta.annotation.Nonnull SignedPreKeyDto signedPreKey) {
+    
+    this.signedPreKey = signedPreKey;
+    return this;
+  }
+
+  /**
+   * Get signedPreKey
+   * @return signedPreKey
+   */
+  @jakarta.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_SIGNED_PRE_KEY, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+
+  public SignedPreKeyDto getSignedPreKey() {
+    return signedPreKey;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_SIGNED_PRE_KEY, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setSignedPreKey(@jakarta.annotation.Nonnull SignedPreKeyDto signedPreKey) {
+    this.signedPreKey = signedPreKey;
+  }
+
+  public PublicKeySet oneTimePreKey(@jakarta.annotation.Nullable OneTimePreKeyDto oneTimePreKey) {
+    
+    this.oneTimePreKey = oneTimePreKey;
+    return this;
+  }
+
+  /**
+   * Get oneTimePreKey
+   * @return oneTimePreKey
+   */
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_ONE_TIME_PRE_KEY, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public OneTimePreKeyDto getOneTimePreKey() {
+    return oneTimePreKey;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_ONE_TIME_PRE_KEY, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setOneTimePreKey(@jakarta.annotation.Nullable OneTimePreKeyDto oneTimePreKey) {
+    this.oneTimePreKey = oneTimePreKey;
   }
 
   public PublicKeySet uploadedAt(@jakarta.annotation.Nonnull Long uploadedAt) {
@@ -105,7 +167,7 @@ public class PublicKeySet {
   }
 
   /**
-   * Epoch milliseconds when these public keys were uploaded to the directory.
+   * Epoch milliseconds when this bundle was uploaded to the directory.
    * @return uploadedAt
    */
   @jakarta.annotation.Nonnull
@@ -133,22 +195,26 @@ public class PublicKeySet {
       return false;
     }
     PublicKeySet publicKeySet = (PublicKeySet) o;
-    return Objects.equals(this.signingPublicKey, publicKeySet.signingPublicKey) &&
-        Objects.equals(this.encryptionPublicKey, publicKeySet.encryptionPublicKey) &&
+    return Objects.equals(this.registrationId, publicKeySet.registrationId) &&
+        Objects.equals(this.identityKey, publicKeySet.identityKey) &&
+        Objects.equals(this.signedPreKey, publicKeySet.signedPreKey) &&
+        Objects.equals(this.oneTimePreKey, publicKeySet.oneTimePreKey) &&
         Objects.equals(this.uploadedAt, publicKeySet.uploadedAt);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(signingPublicKey, encryptionPublicKey, uploadedAt);
+    return Objects.hash(registrationId, identityKey, signedPreKey, oneTimePreKey, uploadedAt);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class PublicKeySet {\n");
-    sb.append("    signingPublicKey: ").append(toIndentedString(signingPublicKey)).append("\n");
-    sb.append("    encryptionPublicKey: ").append(toIndentedString(encryptionPublicKey)).append("\n");
+    sb.append("    registrationId: ").append(toIndentedString(registrationId)).append("\n");
+    sb.append("    identityKey: ").append(toIndentedString(identityKey)).append("\n");
+    sb.append("    signedPreKey: ").append(toIndentedString(signedPreKey)).append("\n");
+    sb.append("    oneTimePreKey: ").append(toIndentedString(oneTimePreKey)).append("\n");
     sb.append("    uploadedAt: ").append(toIndentedString(uploadedAt)).append("\n");
     sb.append("}");
     return sb.toString();

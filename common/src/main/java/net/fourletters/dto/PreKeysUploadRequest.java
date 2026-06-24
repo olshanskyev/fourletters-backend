@@ -20,79 +20,59 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import java.util.UUID;
-import net.fourletters.dto.PublicKeySet;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import net.fourletters.dto.OneTimePreKeyDto;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * KeysResponse
+ * Replenishes the caller&#39;s pool of one-time pre-keys when it runs low.
  */
 @JsonPropertyOrder({
-  KeysResponse.JSON_PROPERTY_USER_ID,
-  KeysResponse.JSON_PROPERTY_KEYS
+  PreKeysUploadRequest.JSON_PROPERTY_ONE_TIME_PRE_KEYS
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-24T17:06:31.125825+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class KeysResponse {
-  public static final String JSON_PROPERTY_USER_ID = "userId";
+public class PreKeysUploadRequest {
+  public static final String JSON_PROPERTY_ONE_TIME_PRE_KEYS = "oneTimePreKeys";
   @jakarta.annotation.Nonnull
-  private UUID userId;
+  private List<OneTimePreKeyDto> oneTimePreKeys = new ArrayList<>();
 
-  public static final String JSON_PROPERTY_KEYS = "keys";
-  @jakarta.annotation.Nonnull
-  private PublicKeySet keys;
-
-  public KeysResponse() {
+  public PreKeysUploadRequest() {
   }
 
-  public KeysResponse userId(@jakarta.annotation.Nonnull UUID userId) {
+  public PreKeysUploadRequest oneTimePreKeys(@jakarta.annotation.Nonnull List<OneTimePreKeyDto> oneTimePreKeys) {
     
-    this.userId = userId;
+    this.oneTimePreKeys = oneTimePreKeys;
+    return this;
+  }
+
+  public PreKeysUploadRequest addOneTimePreKeysItem(OneTimePreKeyDto oneTimePreKeysItem) {
+    if (this.oneTimePreKeys == null) {
+      this.oneTimePreKeys = new ArrayList<>();
+    }
+    this.oneTimePreKeys.add(oneTimePreKeysItem);
     return this;
   }
 
   /**
-   * The user id these public keys belong to.
-   * @return userId
+   * Additional one-time pre-keys to append to the caller&#39;s pool.
+   * @return oneTimePreKeys
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_USER_ID, required = true)
+  @JsonProperty(value = JSON_PROPERTY_ONE_TIME_PRE_KEYS, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public UUID getUserId() {
-    return userId;
+  public List<OneTimePreKeyDto> getOneTimePreKeys() {
+    return oneTimePreKeys;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_USER_ID, required = true)
+  @JsonProperty(value = JSON_PROPERTY_ONE_TIME_PRE_KEYS, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setUserId(@jakarta.annotation.Nonnull UUID userId) {
-    this.userId = userId;
-  }
-
-  public KeysResponse keys(@jakarta.annotation.Nonnull PublicKeySet keys) {
-    
-    this.keys = keys;
-    return this;
-  }
-
-  /**
-   * Get keys
-   * @return keys
-   */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-
-  public PublicKeySet getKeys() {
-    return keys;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setKeys(@jakarta.annotation.Nonnull PublicKeySet keys) {
-    this.keys = keys;
+  public void setOneTimePreKeys(@jakarta.annotation.Nonnull List<OneTimePreKeyDto> oneTimePreKeys) {
+    this.oneTimePreKeys = oneTimePreKeys;
   }
 
 
@@ -104,22 +84,20 @@ public class KeysResponse {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    KeysResponse keysResponse = (KeysResponse) o;
-    return Objects.equals(this.userId, keysResponse.userId) &&
-        Objects.equals(this.keys, keysResponse.keys);
+    PreKeysUploadRequest preKeysUploadRequest = (PreKeysUploadRequest) o;
+    return Objects.equals(this.oneTimePreKeys, preKeysUploadRequest.oneTimePreKeys);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(userId, keys);
+    return Objects.hash(oneTimePreKeys);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class KeysResponse {\n");
-    sb.append("    userId: ").append(toIndentedString(userId)).append("\n");
-    sb.append("    keys: ").append(toIndentedString(keys)).append("\n");
+    sb.append("class PreKeysUploadRequest {\n");
+    sb.append("    oneTimePreKeys: ").append(toIndentedString(oneTimePreKeys)).append("\n");
     sb.append("}");
     return sb.toString();
   }

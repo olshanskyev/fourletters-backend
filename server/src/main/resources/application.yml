@@ -20,7 +20,8 @@ spring:
 
   # PostgreSQL Configuration
   datasource:
-    url: jdbc:postgresql://localhost:5432/FOURLETTERS
+    # reWriteBatchedInserts collapses a JDBC insert batch into one multi-row INSERT statement.
+    url: jdbc:postgresql://localhost:5432/FOURLETTERS?reWriteBatchedInserts=true
     username: fourletters
     password: fourletters
     defaultSchema: FOURLETTERS
@@ -35,6 +36,12 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: true
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
 
   # RabbitMQ Configuration
   rabbitmq:

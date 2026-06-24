@@ -4,9 +4,17 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import net.fourletters.dto.KeysResponse;
+import net.fourletters.dto.KeysUploadRequest;
+import net.fourletters.dto.PublicKeySet;
+import net.fourletters.dto.SignedPreKeyDto;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * Directory entry for a user's Signal pre-key bundle: long-lived identity key, registration id and
+ * the current signed pre-key. One-time pre-keys live in {@link OneTimePreKey}.
+ */
 @Entity
 @Table(name = "public_keys")
 public class UserPublicKey {
@@ -15,11 +23,20 @@ public class UserPublicKey {
     @Column(name = "user_id")
     private UUID userId;
 
-    @Column(name = "signing_public_key", nullable = false, columnDefinition = "TEXT")
-    private String signingPublicKey;
+    @Column(name = "registration_id", nullable = false)
+    private int registrationId;
 
-    @Column(name = "encryption_public_key", nullable = false, columnDefinition = "TEXT")
-    private String encryptionPublicKey;
+    @Column(name = "identity_key", nullable = false, columnDefinition = "TEXT")
+    private String identityKey;
+
+    @Column(name = "signed_prekey_id", nullable = false)
+    private int signedPrekeyId;
+
+    @Column(name = "signed_prekey_public", nullable = false, columnDefinition = "TEXT")
+    private String signedPrekeyPublic;
+
+    @Column(name = "signed_prekey_signature", nullable = false, columnDefinition = "TEXT")
+    private String signedPrekeySignature;
 
     @Column(name = "uploaded_at", nullable = false)
     private Instant uploadedAt;
@@ -27,11 +44,45 @@ public class UserPublicKey {
     public UserPublicKey() {
     }
 
-    public UserPublicKey(UUID userId, String signingPublicKey, String encryptionPublicKey, Instant uploadedAt) {
-        this.userId = userId;
-        this.signingPublicKey = signingPublicKey;
-        this.encryptionPublicKey = encryptionPublicKey;
-        this.uploadedAt = uploadedAt;
+    /** Build a fresh directory entry for a user from an upload request. */
+    public static UserPublicKey from(UUID userId, KeysUploadRequest request) {
+        UserPublicKey entry = new UserPublicKey();
+        entry.userId = userId;
+        entry.applyUpload(request);
+        return entry;
+    }
+
+    /** Overwrite the mutable bundle fields from a (re-)upload request. */
+    public void applyUpload(KeysUploadRequest request) {
+        SignedPreKeyDto signedPreKey = request.getSignedPreKey();
+        this.registrationId = request.getRegistrationId();
+        this.identityKey = request.getIdentityKey();
+        this.signedPrekeyId = signedPreKey.getKeyId();
+        this.signedPrekeyPublic = signedPreKey.getPublicKey();
+        this.signedPrekeySignature = signedPreKey.getSignature();
+        this.uploadedAt = Instant.now();
+    }
+
+    /** Reconstruct the directory response, optionally embedding a popped one-time pre-key. */
+    public KeysResponse toDto(OneTimePreKey oneTimePreKey) {
+        SignedPreKeyDto signedPreKey = new SignedPreKeyDto();
+        signedPreKey.setKeyId(signedPrekeyId);
+        signedPreKey.setPublicKey(signedPrekeyPublic);
+        signedPreKey.setSignature(signedPrekeySignature);
+
+        PublicKeySet keys = new PublicKeySet();
+        keys.setRegistrationId(registrationId);
+        keys.setIdentityKey(identityKey);
+        keys.setSignedPreKey(signedPreKey);
+        keys.setUploadedAt(uploadedAt.toEpochMilli());
+        if (oneTimePreKey != null) {
+            keys.setOneTimePreKey(oneTimePreKey.toDto());
+        }
+
+        KeysResponse response = new KeysResponse();
+        response.setUserId(userId);
+        response.setKeys(keys);
+        return response;
     }
 
     public UUID getUserId() {
@@ -42,20 +93,44 @@ public class UserPublicKey {
         this.userId = userId;
     }
 
-    public String getSigningPublicKey() {
-        return signingPublicKey;
+    public int getRegistrationId() {
+        return registrationId;
     }
 
-    public void setSigningPublicKey(String signingPublicKey) {
-        this.signingPublicKey = signingPublicKey;
+    public void setRegistrationId(int registrationId) {
+        this.registrationId = registrationId;
     }
 
-    public String getEncryptionPublicKey() {
-        return encryptionPublicKey;
+    public String getIdentityKey() {
+        return identityKey;
     }
 
-    public void setEncryptionPublicKey(String encryptionPublicKey) {
-        this.encryptionPublicKey = encryptionPublicKey;
+    public void setIdentityKey(String identityKey) {
+        this.identityKey = identityKey;
+    }
+
+    public int getSignedPrekeyId() {
+        return signedPrekeyId;
+    }
+
+    public void setSignedPrekeyId(int signedPrekeyId) {
+        this.signedPrekeyId = signedPrekeyId;
+    }
+
+    public String getSignedPrekeyPublic() {
+        return signedPrekeyPublic;
+    }
+
+    public void setSignedPrekeyPublic(String signedPrekeyPublic) {
+        this.signedPrekeyPublic = signedPrekeyPublic;
+    }
+
+    public String getSignedPrekeySignature() {
+        return signedPrekeySignature;
+    }
+
+    public void setSignedPrekeySignature(String signedPrekeySignature) {
+        this.signedPrekeySignature = signedPrekeySignature;
     }
 
     public Instant getUploadedAt() {

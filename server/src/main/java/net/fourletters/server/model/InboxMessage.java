@@ -41,9 +41,6 @@ public class InboxMessage {
     @Column(name = "payload", nullable = false, columnDefinition = "TEXT")
     private String payload;
 
-    @Column(name = "signature", nullable = false, columnDefinition = "TEXT")
-    private String signature;
-
     /** Group id for a group message; {@code null} for 1:1. */
     @Column(name = "group_id")
     private UUID groupId;
@@ -61,7 +58,6 @@ public class InboxMessage {
         row.recipientId = message.getRecipientId();
         row.senderId = message.getSenderId();
         row.payload = message.getPayload();
-        row.signature = message.getSignature();
         row.groupId = message.getGroupId();
         row.createdAt = Instant.now();
         return row;
@@ -74,7 +70,6 @@ public class InboxMessage {
         message.setRecipientId(recipientId);
         message.setSenderId(senderId);
         message.setPayload(payload);
-        message.setSignature(signature);
         message.setGroupId(groupId);
         return message;
     }
@@ -91,9 +86,6 @@ public class InboxMessage {
 
     public String getPayload() { return payload; }
     public void setPayload(String payload) { this.payload = payload; }
-
-    public String getSignature() { return signature; }
-    public void setSignature(String signature) { this.signature = signature; }
 
     public UUID getGroupId() { return groupId; }
     public void setGroupId(UUID groupId) { this.groupId = groupId; }

@@ -20,79 +20,77 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import java.util.UUID;
-import net.fourletters.dto.PublicKeySet;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * KeysResponse
+ * A Signal one-time pre-key, consumed once when a peer opens a session.
  */
 @JsonPropertyOrder({
-  KeysResponse.JSON_PROPERTY_USER_ID,
-  KeysResponse.JSON_PROPERTY_KEYS
+  OneTimePreKeyDto.JSON_PROPERTY_KEY_ID,
+  OneTimePreKeyDto.JSON_PROPERTY_PUBLIC_KEY
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-24T17:06:31.125825+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class KeysResponse {
-  public static final String JSON_PROPERTY_USER_ID = "userId";
+public class OneTimePreKeyDto {
+  public static final String JSON_PROPERTY_KEY_ID = "keyId";
   @jakarta.annotation.Nonnull
-  private UUID userId;
+  private Integer keyId;
 
-  public static final String JSON_PROPERTY_KEYS = "keys";
+  public static final String JSON_PROPERTY_PUBLIC_KEY = "publicKey";
   @jakarta.annotation.Nonnull
-  private PublicKeySet keys;
+  private String publicKey;
 
-  public KeysResponse() {
+  public OneTimePreKeyDto() {
   }
 
-  public KeysResponse userId(@jakarta.annotation.Nonnull UUID userId) {
+  public OneTimePreKeyDto keyId(@jakarta.annotation.Nonnull Integer keyId) {
     
-    this.userId = userId;
+    this.keyId = keyId;
     return this;
   }
 
   /**
-   * The user id these public keys belong to.
-   * @return userId
+   * Client-assigned id of this one-time pre-key.
+   * @return keyId
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_USER_ID, required = true)
+  @JsonProperty(value = JSON_PROPERTY_KEY_ID, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public UUID getUserId() {
-    return userId;
+  public Integer getKeyId() {
+    return keyId;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_USER_ID, required = true)
+  @JsonProperty(value = JSON_PROPERTY_KEY_ID, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setUserId(@jakarta.annotation.Nonnull UUID userId) {
-    this.userId = userId;
+  public void setKeyId(@jakarta.annotation.Nonnull Integer keyId) {
+    this.keyId = keyId;
   }
 
-  public KeysResponse keys(@jakarta.annotation.Nonnull PublicKeySet keys) {
+  public OneTimePreKeyDto publicKey(@jakarta.annotation.Nonnull String publicKey) {
     
-    this.keys = keys;
+    this.publicKey = publicKey;
     return this;
   }
 
   /**
-   * Get keys
-   * @return keys
+   * Curve25519 one-time pre-key public key (Base64).
+   * @return publicKey
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
+  @JsonProperty(value = JSON_PROPERTY_PUBLIC_KEY, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public PublicKeySet getKeys() {
-    return keys;
+  public String getPublicKey() {
+    return publicKey;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
+  @JsonProperty(value = JSON_PROPERTY_PUBLIC_KEY, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setKeys(@jakarta.annotation.Nonnull PublicKeySet keys) {
-    this.keys = keys;
+  public void setPublicKey(@jakarta.annotation.Nonnull String publicKey) {
+    this.publicKey = publicKey;
   }
 
 
@@ -104,22 +102,22 @@ public class KeysResponse {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    KeysResponse keysResponse = (KeysResponse) o;
-    return Objects.equals(this.userId, keysResponse.userId) &&
-        Objects.equals(this.keys, keysResponse.keys);
+    OneTimePreKeyDto oneTimePreKeyDto = (OneTimePreKeyDto) o;
+    return Objects.equals(this.keyId, oneTimePreKeyDto.keyId) &&
+        Objects.equals(this.publicKey, oneTimePreKeyDto.publicKey);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(userId, keys);
+    return Objects.hash(keyId, publicKey);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class KeysResponse {\n");
-    sb.append("    userId: ").append(toIndentedString(userId)).append("\n");
-    sb.append("    keys: ").append(toIndentedString(keys)).append("\n");
+    sb.append("class OneTimePreKeyDto {\n");
+    sb.append("    keyId: ").append(toIndentedString(keyId)).append("\n");
+    sb.append("    publicKey: ").append(toIndentedString(publicKey)).append("\n");
     sb.append("}");
     return sb.toString();
   }

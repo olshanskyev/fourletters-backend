@@ -150,14 +150,23 @@ public class InboxService {
 
     /**
      * Drop the retained copy of a message from whichever tier holds it, if it belongs to this
-     * recipient. Returns the original sender recorded on the copy, or {@code null} if no copy
-     * is held (already dropped, never accepted, or not this recipient's message).
+     * recipient
      */
     private UUID dropRetainedCopy(UUID messageId, UUID recipientId) {
+        HotTierStorage.MessageKey key = new HotTierStorage.MessageKey(messageId, recipientId);
+
+        // still held in the hot tier (confirmed within the window) — claim, drop, and remember it.
         EncryptedMessage stored = hotTier.claimByRecipient(messageId, recipientId);
         if (stored != null) {
+            hotTier.markSettled(key);
             return stored.getSenderId();
         }
+
+        // already acknowledged by an earlier receipt — the copy is gone; relay without any DB access.
+        if (hotTier.isSettled(key)) {
+            return null;
+        }
+        hotTier.markSettled(key);
         InboxMessage row = inboxRepository
                 .findById(new InboxMessageId(messageId, recipientId))
                 .orElse(null);
@@ -187,6 +196,10 @@ public class InboxService {
             try {
                 // Persist to the durable tier first, then drop the hot copy.
                 inboxRepository.save(InboxMessage.from(message));
+                // A receipt may have acknowledged this copy while we were persisting it
+                if (hotTier.isSettled(key)) {
+                    inboxRepository.deleteByMessageIdAndRecipientId(key.messageId(), message.getRecipientId());
+                }
                 hotTier.evict(message);
                 logger.debug("Flushed message {} for recipient {} to durable inbox",
                         key.messageId(), message.getRecipientId());
@@ -197,6 +210,8 @@ public class InboxService {
                 logger.warn("Failed to flush message {} to durable inbox; will retry", key.messageId(), e);
             }
         }
+        // Expire settle tombstones older than the hold window;
+        hotTier.sweepSettled(cutoff);
     }
 
 

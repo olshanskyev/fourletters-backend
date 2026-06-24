@@ -24,43 +24,43 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * AuthRequest
+ * How many one-time pre-keys the caller still has in the directory, so the client can top up below a threshold.
  */
 @JsonPropertyOrder({
-  AuthRequest.JSON_PROPERTY_TOKEN
+  PreKeyCountResponse.JSON_PROPERTY_COUNT
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-24T17:06:31.125825+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class AuthRequest {
-  public static final String JSON_PROPERTY_TOKEN = "token";
+public class PreKeyCountResponse {
+  public static final String JSON_PROPERTY_COUNT = "count";
   @jakarta.annotation.Nonnull
-  private String token;
+  private Integer count;
 
-  public AuthRequest() {
+  public PreKeyCountResponse() {
   }
 
-  public AuthRequest token(@jakarta.annotation.Nonnull String token) {
+  public PreKeyCountResponse count(@jakarta.annotation.Nonnull Integer count) {
     
-    this.token = token;
+    this.count = count;
     return this;
   }
 
   /**
-   * The identity token provided by the third-party OAuth provider.
-   * @return token
+   * Remaining one-time pre-keys in the caller&#39;s pool.
+   * @return count
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_TOKEN, required = true)
+  @JsonProperty(value = JSON_PROPERTY_COUNT, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public String getToken() {
-    return token;
+  public Integer getCount() {
+    return count;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_TOKEN, required = true)
+  @JsonProperty(value = JSON_PROPERTY_COUNT, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setToken(@jakarta.annotation.Nonnull String token) {
-    this.token = token;
+  public void setCount(@jakarta.annotation.Nonnull Integer count) {
+    this.count = count;
   }
 
 
@@ -72,20 +72,20 @@ public class AuthRequest {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AuthRequest authRequest = (AuthRequest) o;
-    return Objects.equals(this.token, authRequest.token);
+    PreKeyCountResponse preKeyCountResponse = (PreKeyCountResponse) o;
+    return Objects.equals(this.count, preKeyCountResponse.count);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(token);
+    return Objects.hash(count);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class AuthRequest {\n");
-    sb.append("    token: ").append(toIndentedString(token)).append("\n");
+    sb.append("class PreKeyCountResponse {\n");
+    sb.append("    count: ").append(toIndentedString(count)).append("\n");
     sb.append("}");
     return sb.toString();
   }

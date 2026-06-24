@@ -32,10 +32,9 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   EncryptedMessage.JSON_PROPERTY_RECIPIENT_ID,
   EncryptedMessage.JSON_PROPERTY_SENDER_ID,
   EncryptedMessage.JSON_PROPERTY_PAYLOAD,
-  EncryptedMessage.JSON_PROPERTY_SIGNATURE,
   EncryptedMessage.JSON_PROPERTY_GROUP_ID
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-23T14:46:26.500796900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-24T17:06:31.125825+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class EncryptedMessage {
   public static final String JSON_PROPERTY_MESSAGE_ID = "messageId";
   @jakarta.annotation.Nonnull
@@ -52,10 +51,6 @@ public class EncryptedMessage {
   public static final String JSON_PROPERTY_PAYLOAD = "payload";
   @jakarta.annotation.Nonnull
   private String payload;
-
-  public static final String JSON_PROPERTY_SIGNATURE = "signature";
-  @jakarta.annotation.Nonnull
-  private String signature;
 
   public static final String JSON_PROPERTY_GROUP_ID = "groupId";
   @jakarta.annotation.Nullable
@@ -146,7 +141,7 @@ public class EncryptedMessage {
   }
 
   /**
-   * E2E encrypted message payload (Base64). Per-message ephemeral-ECDH ciphertext sealed to the recipient&#39;s encryption key.
+   * E2E encrypted Signal ciphertext. Format &#39;&lt;sessionType&gt;.&lt;bodyBase64&gt;&#39; where sessionType is 1 (WhisperMessage, established session) or 3 (PreKeyWhisperMessage, establishes the session). The Server treats it as opaque.
    * @return payload
    */
   @jakarta.annotation.Nonnull
@@ -162,31 +157,6 @@ public class EncryptedMessage {
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public void setPayload(@jakarta.annotation.Nonnull String payload) {
     this.payload = payload;
-  }
-
-  public EncryptedMessage signature(@jakarta.annotation.Nonnull String signature) {
-    
-    this.signature = signature;
-    return this;
-  }
-
-  /**
-   * Detached signature over the payload produced by the sender&#39;s identity key (Base64). Verified end-to-end by the recipient against the public-key directory.
-   * @return signature
-   */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_SIGNATURE, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-
-  public String getSignature() {
-    return signature;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_SIGNATURE, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setSignature(@jakarta.annotation.Nonnull String signature) {
-    this.signature = signature;
   }
 
   public EncryptedMessage groupId(@jakarta.annotation.Nullable UUID groupId) {
@@ -228,13 +198,12 @@ public class EncryptedMessage {
         Objects.equals(this.recipientId, encryptedMessage.recipientId) &&
         Objects.equals(this.senderId, encryptedMessage.senderId) &&
         Objects.equals(this.payload, encryptedMessage.payload) &&
-        Objects.equals(this.signature, encryptedMessage.signature) &&
         Objects.equals(this.groupId, encryptedMessage.groupId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(messageId, recipientId, senderId, payload, signature, groupId);
+    return Objects.hash(messageId, recipientId, senderId, payload, groupId);
   }
 
   @Override
@@ -245,7 +214,6 @@ public class EncryptedMessage {
     sb.append("    recipientId: ").append(toIndentedString(recipientId)).append("\n");
     sb.append("    senderId: ").append(toIndentedString(senderId)).append("\n");
     sb.append("    payload: ").append(toIndentedString(payload)).append("\n");
-    sb.append("    signature: ").append(toIndentedString(signature)).append("\n");
     sb.append("    groupId: ").append(toIndentedString(groupId)).append("\n");
     sb.append("}");
     return sb.toString();

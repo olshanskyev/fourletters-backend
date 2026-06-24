@@ -44,6 +44,11 @@ class HotTierStorage {
     private final Map<MessageKey, Boolean> claims = new ConcurrentHashMap<>();
     /** (messageId, recipientId) -> accept instant; drives hold-window expiry and arrival ordering. */
     private final Map<MessageKey, Instant> enqueuedAt = new ConcurrentHashMap<>();
+    /**
+     * Short-lived tombstone of copies already acknowledged by a receipt. Lets a later receipt for
+     * the same copy relay without re-checking the cold tier.
+     */
+    private final Map<MessageKey, Instant> settled = new ConcurrentHashMap<>();
 
     /** Retain a message in the hot tier and register its ownership and accept time. */
     void store(EncryptedMessage message) {
@@ -128,6 +133,21 @@ class HotTierStorage {
     void releaseClaim(EncryptedMessage message) {
         MessageKey key = new MessageKey(message.getMessageId(), message.getRecipientId());
         claims.putIfAbsent(key, Boolean.TRUE);
+    }
+
+    /** Remember that a copy was acknowledged so a subsequent receipt need not touch the cold tier. */
+    void markSettled(MessageKey key) {
+        settled.put(key, Instant.now());
+    }
+
+    /** Whether a copy was recently acknowledged (dropped) by an earlier receipt. */
+    boolean isSettled(MessageKey key) {
+        return settled.containsKey(key);
+    }
+
+    /** Drop settle tombstones accepted at or before {@code cutoff} (called by the hold-window sweeper). */
+    void sweepSettled(Instant cutoff) {
+        settled.entrySet().removeIf(e -> !e.getValue().isAfter(cutoff));
     }
 
     private EncryptedMessage peek(UUID recipientId, UUID messageId) {
