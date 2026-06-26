@@ -7,7 +7,6 @@ import jakarta.persistence.Table;
 import net.fourletters.dto.KeysResponse;
 import net.fourletters.dto.KeysUploadRequest;
 import net.fourletters.dto.PublicKeySet;
-import net.fourletters.dto.SignedPreKeyDto;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -54,7 +53,7 @@ public class UserPublicKey {
 
     /** Overwrite the mutable bundle fields from a (re-)upload request. */
     public void applyUpload(KeysUploadRequest request) {
-        SignedPreKeyDto signedPreKey = request.getSignedPreKey();
+        net.fourletters.dto.SignedPreKey signedPreKey = request.getSignedPreKey();
         this.registrationId = request.getRegistrationId();
         this.identityKey = request.getIdentityKey();
         this.signedPrekeyId = signedPreKey.getKeyId();
@@ -65,7 +64,7 @@ public class UserPublicKey {
 
     /** Reconstruct the directory response, optionally embedding a popped one-time pre-key. */
     public KeysResponse toDto(OneTimePreKey oneTimePreKey) {
-        SignedPreKeyDto signedPreKey = new SignedPreKeyDto();
+        net.fourletters.dto.SignedPreKey signedPreKey = new net.fourletters.dto.SignedPreKey();
         signedPreKey.setKeyId(signedPrekeyId);
         signedPreKey.setPublicKey(signedPrekeyPublic);
         signedPreKey.setSignature(signedPrekeySignature);

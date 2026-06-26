@@ -29,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 @JsonPropertyOrder({
   AuthRequest.JSON_PROPERTY_TOKEN
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-24T17:06:31.125825+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-26T13:12:30.193024900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class AuthRequest {
   public static final String JSON_PROPERTY_TOKEN = "token";
   @jakarta.annotation.Nonnull

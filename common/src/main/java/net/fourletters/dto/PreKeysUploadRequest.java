@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import net.fourletters.dto.OneTimePreKeyDto;
+import net.fourletters.dto.OneTimePreKey;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
@@ -33,22 +33,22 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 @JsonPropertyOrder({
   PreKeysUploadRequest.JSON_PROPERTY_ONE_TIME_PRE_KEYS
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-24T17:06:31.125825+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-26T13:12:30.193024900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class PreKeysUploadRequest {
   public static final String JSON_PROPERTY_ONE_TIME_PRE_KEYS = "oneTimePreKeys";
   @jakarta.annotation.Nonnull
-  private List<OneTimePreKeyDto> oneTimePreKeys = new ArrayList<>();
+  private List<OneTimePreKey> oneTimePreKeys = new ArrayList<>();
 
   public PreKeysUploadRequest() {
   }
 
-  public PreKeysUploadRequest oneTimePreKeys(@jakarta.annotation.Nonnull List<OneTimePreKeyDto> oneTimePreKeys) {
+  public PreKeysUploadRequest oneTimePreKeys(@jakarta.annotation.Nonnull List<OneTimePreKey> oneTimePreKeys) {
     
     this.oneTimePreKeys = oneTimePreKeys;
     return this;
   }
 
-  public PreKeysUploadRequest addOneTimePreKeysItem(OneTimePreKeyDto oneTimePreKeysItem) {
+  public PreKeysUploadRequest addOneTimePreKeysItem(OneTimePreKey oneTimePreKeysItem) {
     if (this.oneTimePreKeys == null) {
       this.oneTimePreKeys = new ArrayList<>();
     }
@@ -64,14 +64,14 @@ public class PreKeysUploadRequest {
   @JsonProperty(value = JSON_PROPERTY_ONE_TIME_PRE_KEYS, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public List<OneTimePreKeyDto> getOneTimePreKeys() {
+  public List<OneTimePreKey> getOneTimePreKeys() {
     return oneTimePreKeys;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_ONE_TIME_PRE_KEYS, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setOneTimePreKeys(@jakarta.annotation.Nonnull List<OneTimePreKeyDto> oneTimePreKeys) {
+  public void setOneTimePreKeys(@jakarta.annotation.Nonnull List<OneTimePreKey> oneTimePreKeys) {
     this.oneTimePreKeys = oneTimePreKeys;
   }
 

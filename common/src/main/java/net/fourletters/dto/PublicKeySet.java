@@ -20,8 +20,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import net.fourletters.dto.OneTimePreKeyDto;
-import net.fourletters.dto.SignedPreKeyDto;
+import net.fourletters.dto.OneTimePreKey;
+import net.fourletters.dto.SignedPreKey;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
@@ -35,7 +35,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   PublicKeySet.JSON_PROPERTY_ONE_TIME_PRE_KEY,
   PublicKeySet.JSON_PROPERTY_UPLOADED_AT
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-24T17:06:31.125825+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-26T13:12:30.193024900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class PublicKeySet {
   public static final String JSON_PROPERTY_REGISTRATION_ID = "registrationId";
   @jakarta.annotation.Nonnull
@@ -47,11 +47,11 @@ public class PublicKeySet {
 
   public static final String JSON_PROPERTY_SIGNED_PRE_KEY = "signedPreKey";
   @jakarta.annotation.Nonnull
-  private SignedPreKeyDto signedPreKey;
+  private SignedPreKey signedPreKey;
 
   public static final String JSON_PROPERTY_ONE_TIME_PRE_KEY = "oneTimePreKey";
   @jakarta.annotation.Nullable
-  private OneTimePreKeyDto oneTimePreKey;
+  private OneTimePreKey oneTimePreKey;
 
   public static final String JSON_PROPERTY_UPLOADED_AT = "uploadedAt";
   @jakarta.annotation.Nonnull
@@ -110,7 +110,7 @@ public class PublicKeySet {
     this.identityKey = identityKey;
   }
 
-  public PublicKeySet signedPreKey(@jakarta.annotation.Nonnull SignedPreKeyDto signedPreKey) {
+  public PublicKeySet signedPreKey(@jakarta.annotation.Nonnull SignedPreKey signedPreKey) {
     
     this.signedPreKey = signedPreKey;
     return this;
@@ -124,18 +124,18 @@ public class PublicKeySet {
   @JsonProperty(value = JSON_PROPERTY_SIGNED_PRE_KEY, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public SignedPreKeyDto getSignedPreKey() {
+  public SignedPreKey getSignedPreKey() {
     return signedPreKey;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_SIGNED_PRE_KEY, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setSignedPreKey(@jakarta.annotation.Nonnull SignedPreKeyDto signedPreKey) {
+  public void setSignedPreKey(@jakarta.annotation.Nonnull SignedPreKey signedPreKey) {
     this.signedPreKey = signedPreKey;
   }
 
-  public PublicKeySet oneTimePreKey(@jakarta.annotation.Nullable OneTimePreKeyDto oneTimePreKey) {
+  public PublicKeySet oneTimePreKey(@jakarta.annotation.Nullable OneTimePreKey oneTimePreKey) {
     
     this.oneTimePreKey = oneTimePreKey;
     return this;
@@ -149,14 +149,14 @@ public class PublicKeySet {
   @JsonProperty(value = JSON_PROPERTY_ONE_TIME_PRE_KEY, required = false)
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
 
-  public OneTimePreKeyDto getOneTimePreKey() {
+  public OneTimePreKey getOneTimePreKey() {
     return oneTimePreKey;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_ONE_TIME_PRE_KEY, required = false)
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setOneTimePreKey(@jakarta.annotation.Nullable OneTimePreKeyDto oneTimePreKey) {
+  public void setOneTimePreKey(@jakarta.annotation.Nullable OneTimePreKey oneTimePreKey) {
     this.oneTimePreKey = oneTimePreKey;
   }
 

@@ -32,7 +32,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   GroupSummary.JSON_PROPERTY_NAME,
   GroupSummary.JSON_PROPERTY_OWNER_ID
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-24T17:06:31.125825+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-26T13:12:30.193024900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class GroupSummary {
   public static final String JSON_PROPERTY_ID = "id";
   @jakarta.annotation.Nonnull

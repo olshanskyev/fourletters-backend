@@ -26,6 +26,7 @@ import net.fourletters.dto.RefreshError;
 public class AuthService {
 
     public enum AuthProvider {
+        DUMMY,
         VK,
         GOOGLE;
         public static Optional<AuthProvider> fromString(String s) {

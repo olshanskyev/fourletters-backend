@@ -24,14 +24,15 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * A Signal one-time pre-key, consumed once when a peer opens a session.
+ * A Signal signed pre-key: a medium-lived Curve25519 public key signed by the identity key.
  */
 @JsonPropertyOrder({
-  OneTimePreKeyDto.JSON_PROPERTY_KEY_ID,
-  OneTimePreKeyDto.JSON_PROPERTY_PUBLIC_KEY
+  SignedPreKey.JSON_PROPERTY_KEY_ID,
+  SignedPreKey.JSON_PROPERTY_PUBLIC_KEY,
+  SignedPreKey.JSON_PROPERTY_SIGNATURE
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-24T17:06:31.125825+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class OneTimePreKeyDto {
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-26T13:12:30.193024900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+public class SignedPreKey {
   public static final String JSON_PROPERTY_KEY_ID = "keyId";
   @jakarta.annotation.Nonnull
   private Integer keyId;
@@ -40,17 +41,21 @@ public class OneTimePreKeyDto {
   @jakarta.annotation.Nonnull
   private String publicKey;
 
-  public OneTimePreKeyDto() {
+  public static final String JSON_PROPERTY_SIGNATURE = "signature";
+  @jakarta.annotation.Nonnull
+  private String signature;
+
+  public SignedPreKey() {
   }
 
-  public OneTimePreKeyDto keyId(@jakarta.annotation.Nonnull Integer keyId) {
+  public SignedPreKey keyId(@jakarta.annotation.Nonnull Integer keyId) {
     
     this.keyId = keyId;
     return this;
   }
 
   /**
-   * Client-assigned id of this one-time pre-key.
+   * Client-assigned id of this signed pre-key.
    * @return keyId
    */
   @jakarta.annotation.Nonnull
@@ -68,14 +73,14 @@ public class OneTimePreKeyDto {
     this.keyId = keyId;
   }
 
-  public OneTimePreKeyDto publicKey(@jakarta.annotation.Nonnull String publicKey) {
+  public SignedPreKey publicKey(@jakarta.annotation.Nonnull String publicKey) {
     
     this.publicKey = publicKey;
     return this;
   }
 
   /**
-   * Curve25519 one-time pre-key public key (Base64).
+   * Curve25519 signed pre-key public key (Base64).
    * @return publicKey
    */
   @jakarta.annotation.Nonnull
@@ -93,6 +98,31 @@ public class OneTimePreKeyDto {
     this.publicKey = publicKey;
   }
 
+  public SignedPreKey signature(@jakarta.annotation.Nonnull String signature) {
+    
+    this.signature = signature;
+    return this;
+  }
+
+  /**
+   * Identity-key signature over the signed pre-key public key (Base64).
+   * @return signature
+   */
+  @jakarta.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_SIGNATURE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+
+  public String getSignature() {
+    return signature;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_SIGNATURE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setSignature(@jakarta.annotation.Nonnull String signature) {
+    this.signature = signature;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -102,22 +132,24 @@ public class OneTimePreKeyDto {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    OneTimePreKeyDto oneTimePreKeyDto = (OneTimePreKeyDto) o;
-    return Objects.equals(this.keyId, oneTimePreKeyDto.keyId) &&
-        Objects.equals(this.publicKey, oneTimePreKeyDto.publicKey);
+    SignedPreKey signedPreKey = (SignedPreKey) o;
+    return Objects.equals(this.keyId, signedPreKey.keyId) &&
+        Objects.equals(this.publicKey, signedPreKey.publicKey) &&
+        Objects.equals(this.signature, signedPreKey.signature);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(keyId, publicKey);
+    return Objects.hash(keyId, publicKey, signature);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class OneTimePreKeyDto {\n");
+    sb.append("class SignedPreKey {\n");
     sb.append("    keyId: ").append(toIndentedString(keyId)).append("\n");
     sb.append("    publicKey: ").append(toIndentedString(publicKey)).append("\n");
+    sb.append("    signature: ").append(toIndentedString(signature)).append("\n");
     sb.append("}");
     return sb.toString();
   }

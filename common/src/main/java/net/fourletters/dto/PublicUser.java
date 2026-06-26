@@ -21,51 +21,43 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * UserResponse
+ * A user&#39;s public profile as served by the directory: the display name and avatar shown to other users. Contains no roles or private account data.
  */
 @JsonPropertyOrder({
-  UserResponse.JSON_PROPERTY_ID,
-  UserResponse.JSON_PROPERTY_USERNAME,
-  UserResponse.JSON_PROPERTY_AVATAR_URL,
-  UserResponse.JSON_PROPERTY_ROLES
+  PublicUser.JSON_PROPERTY_ID,
+  PublicUser.JSON_PROPERTY_USERNAME,
+  PublicUser.JSON_PROPERTY_AVATAR_URL
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-26T13:12:30.193024900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class UserResponse {
+public class PublicUser {
   public static final String JSON_PROPERTY_ID = "id";
   @jakarta.annotation.Nonnull
   private UUID id;
 
   public static final String JSON_PROPERTY_USERNAME = "username";
-  @jakarta.annotation.Nonnull
+  @jakarta.annotation.Nullable
   private String username;
 
   public static final String JSON_PROPERTY_AVATAR_URL = "avatarUrl";
   @jakarta.annotation.Nullable
   private URI avatarUrl;
 
-  public static final String JSON_PROPERTY_ROLES = "roles";
-  @jakarta.annotation.Nonnull
-  private List<String> roles = new ArrayList<>();
-
-  public UserResponse() {
+  public PublicUser() {
   }
 
-  public UserResponse id(@jakarta.annotation.Nonnull UUID id) {
+  public PublicUser id(@jakarta.annotation.Nonnull UUID id) {
     
     this.id = id;
     return this;
   }
 
   /**
-   * Get id
+   * The user id this profile belongs to.
    * @return id
    */
   @jakarta.annotation.Nonnull
@@ -83,39 +75,39 @@ public class UserResponse {
     this.id = id;
   }
 
-  public UserResponse username(@jakarta.annotation.Nonnull String username) {
+  public PublicUser username(@jakarta.annotation.Nullable String username) {
     
     this.username = username;
     return this;
   }
 
   /**
-   * Get username
+   * The user&#39;s public display name.
    * @return username
    */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_USERNAME, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_USERNAME, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
 
   public String getUsername() {
     return username;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_USERNAME, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setUsername(@jakarta.annotation.Nonnull String username) {
+  @JsonProperty(value = JSON_PROPERTY_USERNAME, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setUsername(@jakarta.annotation.Nullable String username) {
     this.username = username;
   }
 
-  public UserResponse avatarUrl(@jakarta.annotation.Nullable URI avatarUrl) {
+  public PublicUser avatarUrl(@jakarta.annotation.Nullable URI avatarUrl) {
     
     this.avatarUrl = avatarUrl;
     return this;
   }
 
   /**
-   * Get avatarUrl
+   * URL of the user&#39;s avatar image, if set.
    * @return avatarUrl
    */
   @jakarta.annotation.Nullable
@@ -133,39 +125,6 @@ public class UserResponse {
     this.avatarUrl = avatarUrl;
   }
 
-  public UserResponse roles(@jakarta.annotation.Nonnull List<String> roles) {
-    
-    this.roles = roles;
-    return this;
-  }
-
-  public UserResponse addRolesItem(String rolesItem) {
-    if (this.roles == null) {
-      this.roles = new ArrayList<>();
-    }
-    this.roles.add(rolesItem);
-    return this;
-  }
-
-  /**
-   * List of user permissions/roles for RBAC.
-   * @return roles
-   */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_ROLES, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-
-  public List<String> getRoles() {
-    return roles;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_ROLES, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setRoles(@jakarta.annotation.Nonnull List<String> roles) {
-    this.roles = roles;
-  }
-
 
   @Override
   public boolean equals(Object o) {
@@ -175,26 +134,24 @@ public class UserResponse {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    UserResponse userResponse = (UserResponse) o;
-    return Objects.equals(this.id, userResponse.id) &&
-        Objects.equals(this.username, userResponse.username) &&
-        Objects.equals(this.avatarUrl, userResponse.avatarUrl) &&
-        Objects.equals(this.roles, userResponse.roles);
+    PublicUser publicUser = (PublicUser) o;
+    return Objects.equals(this.id, publicUser.id) &&
+        Objects.equals(this.username, publicUser.username) &&
+        Objects.equals(this.avatarUrl, publicUser.avatarUrl);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, username, avatarUrl, roles);
+    return Objects.hash(id, username, avatarUrl);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class UserResponse {\n");
+    sb.append("class PublicUser {\n");
     sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    username: ").append(toIndentedString(username)).append("\n");
     sb.append("    avatarUrl: ").append(toIndentedString(avatarUrl)).append("\n");
-    sb.append("    roles: ").append(toIndentedString(roles)).append("\n");
     sb.append("}");
     return sb.toString();
   }

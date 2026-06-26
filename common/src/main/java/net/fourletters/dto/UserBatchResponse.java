@@ -20,47 +20,59 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import net.fourletters.dto.PublicUser;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * How many one-time pre-keys the caller still has in the directory, so the client can top up below a threshold.
+ * Public profiles for a batch of requested user ids. Missing/unknown ids are simply omitted.
  */
 @JsonPropertyOrder({
-  PreKeyCountResponse.JSON_PROPERTY_COUNT
+  UserBatchResponse.JSON_PROPERTY_USERS
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-06-26T13:12:30.193024900+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class PreKeyCountResponse {
-  public static final String JSON_PROPERTY_COUNT = "count";
+public class UserBatchResponse {
+  public static final String JSON_PROPERTY_USERS = "users";
   @jakarta.annotation.Nonnull
-  private Integer count;
+  private List<PublicUser> users = new ArrayList<>();
 
-  public PreKeyCountResponse() {
+  public UserBatchResponse() {
   }
 
-  public PreKeyCountResponse count(@jakarta.annotation.Nonnull Integer count) {
+  public UserBatchResponse users(@jakarta.annotation.Nonnull List<PublicUser> users) {
     
-    this.count = count;
+    this.users = users;
+    return this;
+  }
+
+  public UserBatchResponse addUsersItem(PublicUser usersItem) {
+    if (this.users == null) {
+      this.users = new ArrayList<>();
+    }
+    this.users.add(usersItem);
     return this;
   }
 
   /**
-   * Remaining one-time pre-keys in the caller&#39;s pool.
-   * @return count
+   * Get users
+   * @return users
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_COUNT, required = true)
+  @JsonProperty(value = JSON_PROPERTY_USERS, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public Integer getCount() {
-    return count;
+  public List<PublicUser> getUsers() {
+    return users;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_COUNT, required = true)
+  @JsonProperty(value = JSON_PROPERTY_USERS, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setCount(@jakarta.annotation.Nonnull Integer count) {
-    this.count = count;
+  public void setUsers(@jakarta.annotation.Nonnull List<PublicUser> users) {
+    this.users = users;
   }
 
 
@@ -72,20 +84,20 @@ public class PreKeyCountResponse {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    PreKeyCountResponse preKeyCountResponse = (PreKeyCountResponse) o;
-    return Objects.equals(this.count, preKeyCountResponse.count);
+    UserBatchResponse userBatchResponse = (UserBatchResponse) o;
+    return Objects.equals(this.users, userBatchResponse.users);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(count);
+    return Objects.hash(users);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class PreKeyCountResponse {\n");
-    sb.append("    count: ").append(toIndentedString(count)).append("\n");
+    sb.append("class UserBatchResponse {\n");
+    sb.append("    users: ").append(toIndentedString(users)).append("\n");
     sb.append("}");
     return sb.toString();
   }

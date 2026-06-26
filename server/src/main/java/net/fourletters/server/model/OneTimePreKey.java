@@ -5,7 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
-import net.fourletters.dto.OneTimePreKeyDto;
 import java.util.UUID;
 
 /**
@@ -38,13 +37,13 @@ public class OneTimePreKey {
     }
 
     /** Build a pool entry for a user from its wire DTO. */
-    public static OneTimePreKey from(UUID userId, OneTimePreKeyDto dto) {
+    public static OneTimePreKey from(UUID userId, net.fourletters.dto.OneTimePreKey dto) {
         return new OneTimePreKey(userId, dto.getKeyId(), dto.getPublicKey());
     }
 
     /** Reconstruct the wire DTO (used when a key is handed out in a bundle). */
-    public OneTimePreKeyDto toDto() {
-        OneTimePreKeyDto dto = new OneTimePreKeyDto();
+    public net.fourletters.dto.OneTimePreKey toDto() {
+        net.fourletters.dto.OneTimePreKey dto = new net.fourletters.dto.OneTimePreKey();
         dto.setKeyId(keyId);
         dto.setPublicKey(publicKey);
         return dto;

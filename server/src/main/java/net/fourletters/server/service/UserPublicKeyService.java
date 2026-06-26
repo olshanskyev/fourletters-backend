@@ -2,7 +2,7 @@ package net.fourletters.server.service;
 
 import net.fourletters.dto.KeysResponse;
 import net.fourletters.dto.KeysUploadRequest;
-import net.fourletters.dto.OneTimePreKeyDto;
+
 import net.fourletters.dto.PreKeysUploadRequest;
 import net.fourletters.server.model.OneTimePreKey;
 import net.fourletters.server.model.UserPublicKey;
@@ -76,12 +76,12 @@ public class UserPublicKeyService {
                 .collect(Collectors.toList());
     }
 
-    private void storeOneTimePreKeys(UUID userId, List<OneTimePreKeyDto> preKeys) {
+    private void storeOneTimePreKeys(UUID userId, List<net.fourletters.dto.OneTimePreKey> preKeys) {
         if (preKeys == null || preKeys.isEmpty()) {
             return;
         }
         List<OneTimePreKey> entities = new ArrayList<>(preKeys.size());
-        for (OneTimePreKeyDto dto : preKeys) {
+        for (net.fourletters.dto.OneTimePreKey dto : preKeys) {
             entities.add(OneTimePreKey.from(userId, dto));
         }
         oneTimePreKeyRepository.insertAll(entities);
