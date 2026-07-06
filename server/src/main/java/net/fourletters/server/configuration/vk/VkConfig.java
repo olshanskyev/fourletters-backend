@@ -7,7 +7,7 @@ import com.vk.api.sdk.httpclient.HttpTransportClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import net.fourletters.server.configuration.ProxyResolver;
+import net.fourletters.configuration.ProxyResolver;
 
 @Configuration
 public class VkConfig {

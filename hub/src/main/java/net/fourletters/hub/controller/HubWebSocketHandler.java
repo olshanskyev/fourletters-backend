@@ -12,15 +12,20 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.api.ChannelAwareMessageListener;
 import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.PingMessage;
+import org.springframework.web.socket.PongMessage;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import jakarta.annotation.PreDestroy;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -33,11 +38,21 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
 
     private static final Logger logger = LoggerFactory.getLogger(HubWebSocketHandler.class);
 
+    /** How long a single write may block before the session is considered stuck. */
+    private static final int SEND_TIME_LIMIT_MS = 10_000;
+    /** Max bytes allowed to buffer per session before it is treated as too slow. */
+    private static final int SEND_BUFFER_LIMIT_BYTES = 512 * 1024;
+    /** Close a session if no pong has been received within this window. */
+    private static final long PONG_TIMEOUT_MS = 70_000;
+
     private final HubRabbitMqService rabbitMqService;
     private final SimpleMessageListenerContainer container;
 
     /** Local presence map: userId -> its open WebSocket session on this Hub. */
     private final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
+
+    /** Liveness tracking: WebSocket session id -> epoch millis of the last pong received. */
+    private final Map<String, Long> lastPongTimes = new ConcurrentHashMap<>();
 
     public HubWebSocketHandler(HubRabbitMqService rabbitMqService, ConnectionFactory connectionFactory) {
         this.rabbitMqService = rabbitMqService;
@@ -74,7 +89,11 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
         super.afterConnectionEstablished(session);
         if (session.getPrincipal() != null) {
             String userId = session.getPrincipal().getName();
-            sessions.put(userId, session);
+            // Wrap so concurrent writes (RabbitMQ relay thread + heartbeat thread) are serialized safely.
+            WebSocketSession concurrentSession =
+                    new ConcurrentWebSocketSessionDecorator(session, SEND_TIME_LIMIT_MS, SEND_BUFFER_LIMIT_BYTES);
+            sessions.put(userId, concurrentSession);
+            lastPongTimes.put(session.getId(), System.currentTimeMillis());
             rabbitMqService.bindUserToHubQueue(userId);
             logger.info("Session connected and bound for user: {}", userId);
         }
@@ -84,7 +103,11 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
     public void afterConnectionClosed(@NonNull WebSocketSession session, @NonNull CloseStatus status) throws Exception {
         if (session.getPrincipal() != null) {
             String userId = session.getPrincipal().getName();
-            sessions.remove(userId, session);
+            WebSocketSession stored = sessions.get(userId);
+            if (stored != null && stored.getId().equals(session.getId())) {
+                sessions.remove(userId, stored);
+            }
+            lastPongTimes.remove(session.getId());
             try {
                 rabbitMqService.unbindUserFromHubQueue(userId);
             } catch (AmqpApplicationContextClosedException e) {
@@ -101,6 +124,49 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
     @Override
     protected void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) {
         logger.debug("Ignoring inbound WS frame; Hub is receive-only");
+    }
+
+    // --- Heartbeat (server-initiated ping / pong) --------------------------------
+
+    @Override
+    protected void handlePongMessage(@NonNull WebSocketSession session, @NonNull PongMessage message) {
+        lastPongTimes.put(session.getId(), System.currentTimeMillis());
+    }
+
+    /**
+     * Periodically ping every open session and evict any that stopped responding.
+     * Interval must be shorter than {@link #PONG_TIMEOUT_MS} and shorter than any
+     * idle timeout imposed by intermediaries (proxies, dev tunnels).
+     */
+    @Scheduled(fixedRate = 30_000)
+    public void sendHeartbeats() {
+        long now = System.currentTimeMillis();
+        for (Iterator<Map.Entry<String, WebSocketSession>> it = sessions.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<String, WebSocketSession> entry = it.next();
+            String userId = entry.getKey();
+            WebSocketSession session = entry.getValue();
+
+            Long lastPong = lastPongTimes.get(session.getId());
+            boolean stale = lastPong == null || (now - lastPong) > PONG_TIMEOUT_MS;
+
+            if (!session.isOpen() || stale) {
+                logger.info("Evicting unresponsive session for user {}", userId);
+                it.remove();
+                lastPongTimes.remove(session.getId());
+                try {
+                    session.close(CloseStatus.SESSION_NOT_RELIABLE);
+                } catch (Exception e) {
+                    logger.debug("Failed to close stale session for user {}", userId, e);
+                }
+                continue;
+            }
+
+            try {
+                session.sendMessage(new PingMessage());
+            } catch (Exception e) {
+                logger.debug("Ping failed for user {}; will evict on next cycle", userId, e);
+            }
+        }
     }
 
     // --- Live relay from RabbitMQ ------------------------------------------------

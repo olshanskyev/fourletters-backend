@@ -5,10 +5,7 @@ server:
   servlet:
     contextPath: /server/api/v1
   ssl:
-    enabled: true
-    key-store: classpath:certs/keystore/keystore.p12
-    key-store-password: fourletters
-    key-store-type: pkcs12
+    enabled: false
 
 ---
 spring:
@@ -54,7 +51,7 @@ spring:
     publisher-returns: true
 rest:
   cors:
-    allowedOriginPatterns: "https://localhost"
+    allowedOriginPatterns: "https://localhost, https://4t4074x4-4200.euw.devtunnels.ms"
   jwt:
     accessTokenValiditySec: 900
     refreshTokenValiditySec: 604800

@@ -1,7 +1,29 @@
-package net.fourletters.server.configuration;
+package net.fourletters.configuration;
+
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
+import java.net.http.HttpClient;
+
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 
 public class ProxyResolver {
     public record ProxyEntry(String host, int port) {}
+
+    /**
+     * Builds a JdkClientHttpRequestFactory that routes requests through the
+     * system proxy (when configured)
+     */
+    public static JdkClientHttpRequestFactory proxyAwareRequestFactory() {
+        HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
+
+        ProxyEntry proxyEntry = getSystemProxy();
+        if (proxyEntry != null) {
+            httpClientBuilder.proxy(ProxySelector.of(
+                    new InetSocketAddress(proxyEntry.host(), proxyEntry.port())));
+        }
+
+        return new JdkClientHttpRequestFactory(httpClientBuilder.build());
+    }
 
     public static ProxyEntry getSystemProxy() {
         String proxyHost = System.getProperty("http.proxyHost");

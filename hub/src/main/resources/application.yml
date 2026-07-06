@@ -5,10 +5,7 @@ server:
   servlet:
     contextPath: /hub/api/v1
   ssl:
-    enabled: true
-    key-store: classpath:certs/keystore/keystore.p12
-    key-store-password: fourletters
-    key-store-type: pkcs12
+    enabled: false
 
 ---
 spring:
@@ -26,12 +23,12 @@ spring:
     password: guest
 rest:
   cors:
-    allowedOriginPatterns: "https://localhost"
+    allowedOriginPatterns: "https://localhost, https://4t4074x4-4200.euw.devtunnels.ms"
   jwt:
     issuer: "fourletters"
-    publicKeyUrl: "https://localhost:8080/server/api/v1/auth/jwks"
+    publicKeyUrl: "https://4t4074x4-8080.euw.devtunnels.ms/server/api/v1/auth/jwks"
 # Hub registration: on boot the Hub authenticates to the Server with this bearer token.
 hub:
   registration:
-    url: "https://localhost:8080/server/api/v1/hubs/register"
+    url: "https://4t4074x4-8080.euw.devtunnels.ms/server/api/v1/hubs/register"
     token: "dev-hub-registration-secret"

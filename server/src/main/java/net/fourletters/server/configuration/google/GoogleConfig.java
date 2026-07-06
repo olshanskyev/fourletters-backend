@@ -13,7 +13,7 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.Collections;
 
-import net.fourletters.server.configuration.ProxyResolver;
+import net.fourletters.configuration.ProxyResolver;
 
 @Configuration
 public class GoogleConfig {

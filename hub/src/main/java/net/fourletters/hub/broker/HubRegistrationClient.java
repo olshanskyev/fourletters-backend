@@ -13,6 +13,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.UUID;
 
+import net.fourletters.configuration.ProxyResolver;
+
 /**
  * Calls the Server's {@code POST /hubs/register} on boot to obtain this Hub's relay
  * queue. Authenticates with the registration bearer token from config
@@ -28,7 +30,7 @@ public class HubRegistrationClient {
     public HubRegistrationClient(RestTemplateBuilder builder,
                                  @Value("${hub.registration.url}") String registerUrl,
                                  @Value("${hub.registration.token}") String registrationToken) {
-        this.restTemplate = builder.build();
+        this.restTemplate = builder.requestFactory(ProxyResolver::proxyAwareRequestFactory).build();
         this.registerUrl = registerUrl;
         this.registrationToken = registrationToken;
     }
