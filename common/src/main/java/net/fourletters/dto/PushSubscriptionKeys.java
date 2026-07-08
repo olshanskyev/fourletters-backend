@@ -20,78 +20,77 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import net.fourletters.dto.UserResponse;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * AuthResponse
+ * The client keys of a Web Push (VAPID) subscription, used by the Server to encrypt push payloads end-to-end to the browser push service.
  */
 @JsonPropertyOrder({
-  AuthResponse.JSON_PROPERTY_ACCESS_TOKEN,
-  AuthResponse.JSON_PROPERTY_USER
+  PushSubscriptionKeys.JSON_PROPERTY_P256DH,
+  PushSubscriptionKeys.JSON_PROPERTY_AUTH
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-08T13:45:24.988885800+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class AuthResponse {
-  public static final String JSON_PROPERTY_ACCESS_TOKEN = "access_token";
+public class PushSubscriptionKeys {
+  public static final String JSON_PROPERTY_P256DH = "p256dh";
   @jakarta.annotation.Nonnull
-  private String accessToken;
+  private String p256dh;
 
-  public static final String JSON_PROPERTY_USER = "user";
+  public static final String JSON_PROPERTY_AUTH = "auth";
   @jakarta.annotation.Nonnull
-  private UserResponse user;
+  private String auth;
 
-  public AuthResponse() {
+  public PushSubscriptionKeys() {
   }
 
-  public AuthResponse accessToken(@jakarta.annotation.Nonnull String accessToken) {
+  public PushSubscriptionKeys p256dh(@jakarta.annotation.Nonnull String p256dh) {
     
-    this.accessToken = accessToken;
+    this.p256dh = p256dh;
     return this;
   }
 
   /**
-   * The short-lived JWT Access Token.
-   * @return accessToken
+   * The subscription&#39;s P-256 ECDH public key (Base64url), as produced by the browser PushManager.
+   * @return p256dh
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_ACCESS_TOKEN, required = true)
+  @JsonProperty(value = JSON_PROPERTY_P256DH, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public String getAccessToken() {
-    return accessToken;
+  public String getP256dh() {
+    return p256dh;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_ACCESS_TOKEN, required = true)
+  @JsonProperty(value = JSON_PROPERTY_P256DH, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setAccessToken(@jakarta.annotation.Nonnull String accessToken) {
-    this.accessToken = accessToken;
+  public void setP256dh(@jakarta.annotation.Nonnull String p256dh) {
+    this.p256dh = p256dh;
   }
 
-  public AuthResponse user(@jakarta.annotation.Nonnull UserResponse user) {
+  public PushSubscriptionKeys auth(@jakarta.annotation.Nonnull String auth) {
     
-    this.user = user;
+    this.auth = auth;
     return this;
   }
 
   /**
-   * Get user
-   * @return user
+   * The subscription&#39;s auth secret (Base64url), as produced by the browser PushManager.
+   * @return auth
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_USER, required = true)
+  @JsonProperty(value = JSON_PROPERTY_AUTH, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public UserResponse getUser() {
-    return user;
+  public String getAuth() {
+    return auth;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_USER, required = true)
+  @JsonProperty(value = JSON_PROPERTY_AUTH, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setUser(@jakarta.annotation.Nonnull UserResponse user) {
-    this.user = user;
+  public void setAuth(@jakarta.annotation.Nonnull String auth) {
+    this.auth = auth;
   }
 
 
@@ -103,22 +102,22 @@ public class AuthResponse {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AuthResponse authResponse = (AuthResponse) o;
-    return Objects.equals(this.accessToken, authResponse.accessToken) &&
-        Objects.equals(this.user, authResponse.user);
+    PushSubscriptionKeys pushSubscriptionKeys = (PushSubscriptionKeys) o;
+    return Objects.equals(this.p256dh, pushSubscriptionKeys.p256dh) &&
+        Objects.equals(this.auth, pushSubscriptionKeys.auth);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(accessToken, user);
+    return Objects.hash(p256dh, auth);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class AuthResponse {\n");
-    sb.append("    accessToken: ").append(toIndentedString(accessToken)).append("\n");
-    sb.append("    user: ").append(toIndentedString(user)).append("\n");
+    sb.append("class PushSubscriptionKeys {\n");
+    sb.append("    p256dh: ").append(toIndentedString(p256dh)).append("\n");
+    sb.append("    auth: ").append(toIndentedString(auth)).append("\n");
     sb.append("}");
     return sb.toString();
   }

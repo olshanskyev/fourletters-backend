@@ -34,7 +34,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   MessageBatchResponse.JSON_PROPERTY_RESULTS,
   MessageBatchResponse.JSON_PROPERTY_SERVER_STARTED_AT
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-06T15:05:45.914087500+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-08T13:45:24.988885800+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class MessageBatchResponse {
   public static final String JSON_PROPERTY_RESULTS = "results";
   @jakarta.annotation.Nonnull

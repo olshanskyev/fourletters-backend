@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.fourletters.broker.RabbitMqTopology;
 import net.fourletters.dto.*;
 import net.fourletters.server.service.PendingReceipts;
+import net.fourletters.server.service.PushNotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
@@ -15,7 +16,6 @@ import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.ReturnedMessage;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -29,31 +29,31 @@ public class ServerRabbitMqService {
 
     private static final Logger logger = LoggerFactory.getLogger(ServerRabbitMqService.class);
 
-    /** Header that marks a publish as a receipt, making only receipts {@code mandatory}. */
+    /** Header that marks a publish as a receipt, so the returns callback can tell it from a message. */
     private static final String RECEIPT_HEADER = "x-fl-receipt";
 
     private final AmqpAdmin amqpAdmin;
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
     private final PendingReceipts pendingReceipts;
+    private final PushNotificationService pushNotificationService;
 
     public ServerRabbitMqService(AmqpAdmin amqpAdmin,
                                  RabbitTemplate rabbitTemplate,
                                  ObjectMapper objectMapper,
-                                 PendingReceipts pendingReceipts) {
+                                 PendingReceipts pendingReceipts,
+                                 PushNotificationService pushNotificationService) {
         this.amqpAdmin = amqpAdmin;
         this.rabbitTemplate = rabbitTemplate;
         this.objectMapper = objectMapper;
         this.pendingReceipts = pendingReceipts;
+        this.pushNotificationService = pushNotificationService;
 
         // The Server owns and declares the single live fan-out exchange at boot.
         amqpAdmin.declareExchange(new TopicExchange(RabbitMqTopology.MESSAGES_EXCHANGE));
 
-        // Only receipts are published mandatory; an unroutable receipt (sender offline) is
-        // returned and retained for /inbox pull. Messages carry no header and stay best-effort.
-        rabbitTemplate.setMandatoryExpression(new SpelExpressionParser()
-                .parseExpression("messageProperties.headers['" + RECEIPT_HEADER + "'] != null"));
-        rabbitTemplate.setReturnsCallback(this::onReceiptReturned);
+        rabbitTemplate.setMandatory(true);
+        rabbitTemplate.setReturnsCallback(this::onMessageReturned);
     }
 
     /**
@@ -102,11 +102,21 @@ public class ServerRabbitMqService {
     }
 
     /**
-     * A receipt that could not be routed means its target sender is offline; retain it so the
-     * sender pulls it on the next {@code GET /inbox}. Routable receipts (sender online) are
-     * delivered live and never reach here.
+     * An unroutable publish is returned here. A returned <b>receipt</b> (sender offline) is retained
+     * in {@link PendingReceipts} for the sender's next {@code GET /inbox}; a returned <b>message</b>
+     * (recipient has no live Hub binding = offline) triggers a best-effort push wake-up.
      */
-    private void onReceiptReturned(ReturnedMessage returned) {
+    private void onMessageReturned(ReturnedMessage returned) {
+        Object receiptHeader = returned.getMessage().getMessageProperties().getHeaders().get(RECEIPT_HEADER);
+        if (receiptHeader != null) {
+            retainReturnedReceipt(returned);
+        } else {
+            pushForReturnedMessage(returned);
+        }
+    }
+
+    /** Retain a receipt whose target sender is offline, for pull via {@code GET /inbox}. */
+    private void retainReturnedReceipt(ReturnedMessage returned) {
         try {
             ReceiptEvent event = objectMapper.readValue(returned.getMessage().getBody(), ReceiptEvent.class);
             ReceiptData data = event.getData();
@@ -120,6 +130,21 @@ public class ServerRabbitMqService {
                     senderId, type, data.getMessageId());
         } catch (Exception e) {
             logger.warn("Failed to retain returned receipt (routingKey={})", returned.getRoutingKey(), e);
+        }
+    }
+
+    /** Wake an offline recipient whose live message could not be routed to any Hub. */
+    private void pushForReturnedMessage(ReturnedMessage returned) {
+        try {
+            MessageEvent event = objectMapper.readValue(returned.getMessage().getBody(), MessageEvent.class);
+            EncryptedMessage message = event.getData();
+            UUID recipientId = UUID.fromString(
+                    returned.getRoutingKey().substring(RabbitMqTopology.ROUTING_KEY_PREFIX.length()));
+            pushNotificationService.notifyRecipient(recipientId, message.getSenderId(), message.getGroupId());
+            logger.debug("Recipient {} offline; triggered push for message {}",
+                    recipientId, message.getMessageId());
+        } catch (Exception e) {
+            logger.warn("Failed to trigger push for returned message (routingKey={})", returned.getRoutingKey(), e);
         }
     }
 }

@@ -71,3 +71,12 @@ inbox:
   hold-window-seconds: 30
   # How often the sweeper scans the hot tier for expired (unconfirmed) messages.
   flush-interval-ms: 5000
+# Web Push (VAPID) — wakes an offline recipient. push is disabled (no-op) when the key pair is absent.
+push:
+  vapid:
+    public-key: ${PUSH_VAPID_PUBLIC_KEY:}
+    private-key: ${PUSH_VAPID_PRIVATE_KEY:}
+    # Contact URI required by the Web Push spec (mailto: or https:).
+    subject: ${PUSH_VAPID_SUBJECT:mailto:olshanskyev@gmail.com}
+  # At most one push per recipient within this window; further triggers are collapsed.
+  debounce-seconds: 15
