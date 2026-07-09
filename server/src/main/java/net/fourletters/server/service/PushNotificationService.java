@@ -275,6 +275,12 @@ public class PushNotificationService {
         notification.put("icon", icon);
         // Android renders the small status-bar icon monochrome (alpha only);
         notification.put("badge", BADGE_ICON);
+        // Large media (sender avatar). iOS shows it as the expanded image; the payload icon is
+        // ignored there. Only an absolute URL is fetchable by the OS push service.
+        String image = resolveImage(sender);
+        if (image != null) {
+            notification.put("image", image);
+        }
         // Collapse repeated wake-ups for the same recipient into one visible notification.
         notification.put("tag", "fourletters-" + recipientId);
         notification.put("renotify", true);
@@ -320,5 +326,15 @@ public class PushNotificationService {
             }
         }
         return DEFAULT_ICON;
+    }
+
+    private String resolveImage(User sender) {
+        if (sender != null) {
+            String avatar = sender.getAvatarUrl();
+            if (avatar != null && (avatar.startsWith("https://") || avatar.startsWith("http://"))) {
+                return avatar;
+            }
+        }
+        return null;
     }
 }
