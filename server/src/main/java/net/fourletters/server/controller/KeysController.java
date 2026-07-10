@@ -69,6 +69,7 @@ public class KeysController {
         }
         PreKeyCountResponse response = new PreKeyCountResponse();
         response.setCount((int) userPublicKeyService.countOneTimePreKeys(userId));
+        userPublicKeyService.getIdentityKey(userId).ifPresent(response::setIdentityKey);
         return ResponseEntity.ok(response);
     }
 

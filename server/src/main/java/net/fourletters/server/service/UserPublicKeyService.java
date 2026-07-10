@@ -62,6 +62,12 @@ public class UserPublicKeyService {
         return oneTimePreKeyRepository.countByUserId(userId);
     }
 
+    /** The caller's identity public key currently in the directory (Base64), if a bundle exists. */
+    @Transactional(readOnly = true)
+    public Optional<String> getIdentityKey(UUID userId) {
+        return repository.findById(userId).map(UserPublicKey::getIdentityKey);
+    }
+
     /** Fetch a user's bundle, popping (consuming) one one-time pre-key if any remain. */
     @Transactional
     public Optional<KeysResponse> getKeysByUserId(UUID userId) {

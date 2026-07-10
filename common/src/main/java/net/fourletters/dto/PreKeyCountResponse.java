@@ -24,16 +24,21 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * How many one-time pre-keys the caller still has in the directory, so the client can top up below a threshold.
+ * How many one-time pre-keys the caller still has in the directory, so the client can top up below a threshold. Also carries the caller&#39;s currently published identity key so a re-used device can detect a stale directory entry and re-publish.
  */
 @JsonPropertyOrder({
-  PreKeyCountResponse.JSON_PROPERTY_COUNT
+  PreKeyCountResponse.JSON_PROPERTY_COUNT,
+  PreKeyCountResponse.JSON_PROPERTY_IDENTITY_KEY
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-08T13:45:24.988885800+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-10T09:32:42.450536800+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class PreKeyCountResponse {
   public static final String JSON_PROPERTY_COUNT = "count";
   @jakarta.annotation.Nonnull
   private Integer count;
+
+  public static final String JSON_PROPERTY_IDENTITY_KEY = "identityKey";
+  @jakarta.annotation.Nullable
+  private String identityKey;
 
   public PreKeyCountResponse() {
   }
@@ -63,6 +68,31 @@ public class PreKeyCountResponse {
     this.count = count;
   }
 
+  public PreKeyCountResponse identityKey(@jakarta.annotation.Nullable String identityKey) {
+    
+    this.identityKey = identityKey;
+    return this;
+  }
+
+  /**
+   * The caller&#39;s Curve25519 identity public key currently stored in the directory (Base64), or absent if the caller has no directory entry.
+   * @return identityKey
+   */
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_IDENTITY_KEY, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public String getIdentityKey() {
+    return identityKey;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_IDENTITY_KEY, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setIdentityKey(@jakarta.annotation.Nullable String identityKey) {
+    this.identityKey = identityKey;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -73,12 +103,13 @@ public class PreKeyCountResponse {
       return false;
     }
     PreKeyCountResponse preKeyCountResponse = (PreKeyCountResponse) o;
-    return Objects.equals(this.count, preKeyCountResponse.count);
+    return Objects.equals(this.count, preKeyCountResponse.count) &&
+        Objects.equals(this.identityKey, preKeyCountResponse.identityKey);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(count);
+    return Objects.hash(count, identityKey);
   }
 
   @Override
@@ -86,6 +117,7 @@ public class PreKeyCountResponse {
     StringBuilder sb = new StringBuilder();
     sb.append("class PreKeyCountResponse {\n");
     sb.append("    count: ").append(toIndentedString(count)).append("\n");
+    sb.append("    identityKey: ").append(toIndentedString(identityKey)).append("\n");
     sb.append("}");
     return sb.toString();
   }
