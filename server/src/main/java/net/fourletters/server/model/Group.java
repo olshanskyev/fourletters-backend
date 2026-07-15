@@ -29,6 +29,13 @@ public class Group {
     @Column(name = "owner_id", nullable = false)
     private UUID ownerId;
 
+    /**
+     * Server-authoritative Sender-Key epoch. Incremented only when a member is removed, which
+     * invalidates every distributed Sender Key.
+     */
+    @Column(name = "epoch", nullable = false)
+    private int epoch = 0;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -44,6 +51,7 @@ public class Group {
         summary.setId(id);
         summary.setName(name);
         summary.setOwnerId(ownerId);
+        summary.setEpoch(epoch);
         return summary;
     }
 
@@ -62,6 +70,7 @@ public class Group {
         dto.setName(name);
         dto.setOwnerId(ownerId);
         dto.setMembers(members);
+        dto.setEpoch(epoch);
         dto.setCreatedAt(createdAt.toEpochMilli());
         dto.setUpdatedAt(effectiveUpdatedAt.toEpochMilli());
         return dto;
@@ -75,6 +84,9 @@ public class Group {
 
     public UUID getOwnerId() { return ownerId; }
     public void setOwnerId(UUID ownerId) { this.ownerId = ownerId; }
+
+    public int getEpoch() { return epoch; }
+    public void setEpoch(int epoch) { this.epoch = epoch; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

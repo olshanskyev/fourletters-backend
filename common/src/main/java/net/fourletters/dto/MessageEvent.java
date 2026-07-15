@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   MessageEvent.JSON_PROPERTY_EVENT,
   MessageEvent.JSON_PROPERTY_DATA
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-10T09:32:42.450536800+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-15T13:27:28.119670600+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class MessageEvent {
   /**
    * Gets or Sets event

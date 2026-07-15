@@ -4,22 +4,15 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Composite primary key for {@link InboxMessage}: {@code (messageId, recipientId)}.
- *
- * <p>A 1:1 message has a single recipient row; a group message is fanned out to one row per
- * member, all sharing the client-generated {@code messageId}. The recipient therefore must be
- * part of the key so each member's copy is an independent durable row.
- */
-public class InboxMessageId implements Serializable {
+public class InboxPendingId implements Serializable {
 
     private UUID messageId;
     private UUID recipientId;
 
-    public InboxMessageId() {
+    public InboxPendingId() {
     }
 
-    public InboxMessageId(UUID messageId, UUID recipientId) {
+    public InboxPendingId(UUID messageId, UUID recipientId) {
         this.messageId = messageId;
         this.recipientId = recipientId;
     }
@@ -38,7 +31,7 @@ public class InboxMessageId implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        InboxMessageId that = (InboxMessageId) o;
+        InboxPendingId that = (InboxPendingId) o;
         return Objects.equals(messageId, that.messageId) && Objects.equals(recipientId, that.recipientId);
     }
 

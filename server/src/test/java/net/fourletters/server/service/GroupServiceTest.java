@@ -123,7 +123,6 @@ class GroupServiceTest {
     @Test
     void getGroupReturnsDetailForAMember() {
         when(groupRepository.findById(groupId)).thenReturn(Optional.of(existingGroup()));
-        when(memberRepository.existsByGroupIdAndUserId(groupId, memberA)).thenReturn(true);
         when(memberRepository.findByGroupId(groupId))
                 .thenReturn(List.of(new GroupMember(groupId, owner, Instant.now()),
                         new GroupMember(groupId, memberA, Instant.now())));
@@ -137,7 +136,9 @@ class GroupServiceTest {
     @Test
     void getGroupRejectsNonMember() {
         when(groupRepository.findById(groupId)).thenReturn(Optional.of(existingGroup()));
-        when(memberRepository.existsByGroupIdAndUserId(groupId, memberB)).thenReturn(false);
+        when(memberRepository.findByGroupId(groupId))
+                .thenReturn(List.of(new GroupMember(groupId, owner, Instant.now()),
+                        new GroupMember(groupId, memberA, Instant.now())));
 
         assertThatThrownBy(() -> service().getGroup(memberB, groupId))
                 .isInstanceOf(ResponseStatusException.class)

@@ -3,8 +3,9 @@ package net.fourletters.server.service;
 import net.fourletters.dto.*;
 import net.fourletters.server.broker.ServerRabbitMqService;
 import net.fourletters.server.model.InboxMessage;
-import net.fourletters.server.model.InboxMessageId;
+import net.fourletters.server.model.InboxPending;
 import net.fourletters.server.repository.InboxMessageRepository;
+import net.fourletters.server.repository.InboxPendingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,7 +15,9 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -33,6 +36,8 @@ public class InboxService {
 
     private final ServerRabbitMqService rabbitMqService;
     private final InboxMessageRepository inboxRepository;
+    private final InboxPendingRepository inboxPendingRepository;
+    private final GroupService groupService;
 
     /** Hold window length */
     private final Duration holdWindow;
@@ -43,42 +48,105 @@ public class InboxService {
      */
     private final long serverStartedAt = System.currentTimeMillis();
 
-    /** In-memory hot tier: all heap state and its atomic operations. */
-    private final HotTierStorage hotTier = new HotTierStorage();
+    /** In-memory hot tier holding accepted messages during the hold window. */
+    private final HotTierStorage tier = new HotTierStorage();
+
+    /** Cold projection of a flushed message: one payload plus one row per pending recipient. */
+    private final HotTierStorage.ColdSink coldSink;
 
     /** In-memory backstop of acks owed to offline senders, pulled via /inbox. */
     private final PendingReceipts pendingReceipts;
 
     public InboxService(ServerRabbitMqService rabbitMqService,
                         InboxMessageRepository inboxRepository,
+                        InboxPendingRepository inboxPendingRepository,
+                        GroupService groupService,
                         PendingReceipts pendingReceipts,
                         @Value("${inbox.hold-window-seconds:30}") long holdWindowSeconds) {
         this.rabbitMqService = rabbitMqService;
         this.inboxRepository = inboxRepository;
+        this.inboxPendingRepository = inboxPendingRepository;
+        this.groupService = groupService;
         this.pendingReceipts = pendingReceipts;
         this.holdWindow = Duration.ofSeconds(holdWindowSeconds);
+        this.coldSink = (message, pending) -> {
+            inboxRepository.save(InboxMessage.from(message));
+            for (UUID recipientId : pending) {
+                inboxPendingRepository.save(new InboxPending(message.getMessageId(), recipientId));
+            }
+        };
     }
 
     /**
-     * Accept an outgoing message: stamp the authenticated sender, retain it in the hot tier, and
-     * publish it for live delivery. Every message is a single recipient copy. A group message is
-     * just such a 1:1 copy that also carries a {@code groupId} for conversation threading — the
-     * client fans a group send out as one independent copy per member, each posted separately and
-     * receipted on its own.
+     * Accept an outgoing message: stamp the authenticated sender, retain it, and publish it for
+     * live delivery.
+     *
+     * <p>A <b>1:1</b> message (a {@code recipientId}, no {@code groupId}) is held as a single
+     * recipient copy. A <b>group</b> message (a {@code groupId}, no {@code recipientId}) is
+     * encrypted once with the sender's Sender Key; the Server reads the roster and stores that
+     * single payload <em>once</em>, tracking the set of members still owed delivery, then publishes
+     * the same copy to each member.
      */
     public AcceptedResponse accept(EncryptedMessage message, UUID senderId) {
         // senderId is authoritative from the session; any client-provided value is ignored.
         message.setSenderId(senderId);
 
-        hotTier.store(message);
-        rabbitMqService.publishMessage(message);
-        logger.debug("Accepted message {} for recipient {}", message.getMessageId(), message.getRecipientId());
+        if (message.getGroupId() != null && message.getRecipientId() == null) {
+            acceptGroup(message, senderId);
+        } else {
+            acceptDirect(message);
+        }
 
         AcceptedResponse response = new AcceptedResponse();
         response.setMessageId(message.getMessageId());
         response.setStatus(AcceptedResponse.StatusEnum.ACCEPTED);
         response.setServerStartedAt(serverStartedAt);
         return response;
+    }
+
+    /**
+     * Store a single-copy direct message.
+     */
+    private void acceptDirect(EncryptedMessage message) {
+        UUID recipientId = message.getRecipientId();
+        if (recipientId == null) {
+            throw new IllegalArgumentException("A 1:1 message requires a recipientId");
+        }
+        tier.store(message, Set.of(recipientId));
+        rabbitMqService.publishMessage(message);
+        logger.debug("Accepted message {} for recipient {}",
+                message.getMessageId(), recipientId);
+    }
+
+    /**
+     * Store a single-copy group message and fan it out. The roster (minus the sender) is the set of
+     * members owed delivery.
+     */
+    private void acceptGroup(EncryptedMessage message, UUID senderId) {
+        Set<UUID> recipients = new LinkedHashSet<>(groupService.groupRoster(message.getGroupId()));
+        recipients.remove(senderId);
+        if (recipients.isEmpty()) {
+            logger.debug("Group message {} has no other recipients; dropping", message.getMessageId());
+            return;
+        }
+
+        tier.store(message, recipients);
+        for (UUID recipientId : recipients) {
+            rabbitMqService.publishMessage(publishCopy(message, recipientId));
+        }
+        logger.debug("Accepted group message {} for {} recipients (single copy)",
+                message.getMessageId(), recipients.size());
+    }
+
+    /** A per-recipient view of a stored group copy, for live publishing (threading needs a recipient). */
+    private static EncryptedMessage publishCopy(EncryptedMessage source, UUID recipientId) {
+        EncryptedMessage copy = new EncryptedMessage();
+        copy.setMessageId(source.getMessageId());
+        copy.setSenderId(source.getSenderId());
+        copy.setGroupId(source.getGroupId());
+        copy.setPayload(source.getPayload());
+        copy.setRecipientId(recipientId);
+        return copy;
     }
 
     /**
@@ -110,10 +178,12 @@ public class InboxService {
     public InboxResponse getInbox(UUID userId) {
         List<EncryptedMessage> messages = new ArrayList<>();
         // Cold rows are older than anything still held, so they come first, in arrival order.
-        for (InboxMessage row : inboxRepository.findByRecipientIdOrderByCreatedAtAsc(userId)) {
-            messages.add(row.toDto());
+        for (InboxMessage row : inboxRepository.findPendingForRecipient(userId)) {
+            EncryptedMessage dto = row.toDto();
+            dto.setRecipientId(userId);
+            messages.add(dto);
         }
-        messages.addAll(hotTier.messagesFor(userId));
+        messages.addAll(tier.pendingFor(userId));
 
         InboxResponse response = new InboxResponse();
         response.setMessages(messages);
@@ -149,69 +219,50 @@ public class InboxService {
     }
 
     /**
-     * Drop the retained copy of a message from whichever tier holds it, if it belongs to this
-     * recipient
+     * Drop the retained copy from whichever tier holds it, for this recipient (1:1 or group).
+     *
+     * @return the original sender id (to relay the receipt), or {@code null} if nothing was held
      */
     private UUID dropRetainedCopy(UUID messageId, UUID recipientId) {
-        HotTierStorage.MessageKey key = new HotTierStorage.MessageKey(messageId, recipientId);
-
-        // still held in the hot tier (confirmed within the window) — claim, drop, and remember it.
-        EncryptedMessage stored = hotTier.claimByRecipient(messageId, recipientId);
-        if (stored != null) {
-            hotTier.markSettled(key);
-            return stored.getSenderId();
+        // Hot tier first (in-memory, no DB). If it handles the receipt the cold tier is never touched.
+        HotTierStorage.Ack ack = tier.acknowledge(messageId, recipientId);
+        if (ack.handled()) {
+            return ack.senderId();
         }
-
-        // already acknowledged by an earlier receipt — the copy is gone; relay without any DB access.
-        if (hotTier.isSettled(key)) {
-            return null;
-        }
-        hotTier.markSettled(key);
-        InboxMessage row = inboxRepository
-                .findById(new InboxMessageId(messageId, recipientId))
-                .orElse(null);
-        if (row != null) {
-            inboxRepository.deleteByMessageIdAndRecipientId(messageId, recipientId);
-            return row.getSenderId();
-        }
-        return null;
+        // Flushed: clear the durable copy.
+        return dropColdCopy(messageId, recipientId);
     }
 
     /**
-     * Hold-window sweeper: flush every message older than the hold window to the durable
-     * inbox, then evict it from memory. Each message is <em>claimed</em> in the hot tier
-     * before persisting, so a concurrent receipt can never also process it; the claim
-     * guarantees a confirmed-in-window message is never written. Order is
-     * <b>persist-then-evict</b> so a message is never absent from both tiers.
+     * Clear a flushed message's cold copy for this recipient: drop the recipient's pending row (a DB
+     * trigger drops the shared payload once the last recipient is gone).
+     *
+     * @return the original sender id, or {@code null} if no durable copy was found
+     */
+    private UUID dropColdCopy(UUID messageId, UUID recipientId) {
+        InboxMessage row = inboxRepository.findById(messageId).orElse(null);
+        if (row == null) {
+            return null;
+        }
+        // A 1:1 message has a single recipient; tombstone it so a duplicate receipt short-circuits.
+        if (row.getGroupId() == null) {
+            tier.markSettled(messageId);
+        }
+        inboxPendingRepository.deleteByMessageIdAndRecipientId(messageId, recipientId);
+        return row.getSenderId();
+    }
+
+    /**
+     * Hold-window sweeper: flush messages older than the hold window to the durable inbox, then
+     * evict them. The tier claims before persisting (so a concurrent receipt can't also process it)
+     * and persists-then-evicts, so a message is never absent from both tiers.
      */
     @Scheduled(fixedDelayString = "${inbox.flush-interval-ms:5000}")
     void flushExpired() {
         Instant cutoff = Instant.now().minus(holdWindow);
-        for (HotTierStorage.MessageKey key : hotTier.expiredKeys(cutoff)) {
-            // Atomically claim the message and get the copy to persist;
-            EncryptedMessage message = hotTier.claimForFlush(key);
-            if (message == null) {
-                continue;
-            }
-            try {
-                // Persist to the durable tier first, then drop the hot copy.
-                inboxRepository.save(InboxMessage.from(message));
-                // A receipt may have acknowledged this copy while we were persisting it
-                if (hotTier.isSettled(key)) {
-                    inboxRepository.deleteByMessageIdAndRecipientId(key.messageId(), message.getRecipientId());
-                }
-                hotTier.evict(message);
-                logger.debug("Flushed message {} for recipient {} to durable inbox",
-                        key.messageId(), message.getRecipientId());
-            } catch (RuntimeException e) {
-                // Persist failed: release the claim and leave the hot copy in place so the
-                // next sweep (or an incoming receipt) retries. Sender's outbox is the backup.
-                hotTier.releaseClaim(message);
-                logger.warn("Failed to flush message {} to durable inbox; will retry", key.messageId(), e);
-            }
-        }
-        // Expire settle tombstones older than the hold window;
-        hotTier.sweepSettled(cutoff);
+        tier.flushExpired(cutoff, coldSink);
+        // Expire 1:1 settle tombstones older than the hold window.
+        tier.sweep(cutoff);
     }
 
 

@@ -79,10 +79,12 @@ public class GroupService {
     @Transactional(readOnly = true)
     public net.fourletters.dto.Group getGroup(UUID userId, UUID groupId) {
         Group group = requireGroup(groupId);
-        if (!memberRepository.existsByGroupIdAndUserId(groupId, userId)) {
+        // The roster is loaded once and reused for both the membership check and the DTO.
+        List<GroupMember> members = memberRepository.findByGroupId(groupId);
+        if (members.stream().noneMatch(member -> member.getUserId().equals(userId))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not a member");
         }
-        return toGroupDto(group, null);
+        return group.toDto(members, null);
     }
 
     /** Owner-only roster change: add and/or remove members. */
@@ -101,9 +103,11 @@ public class GroupService {
         roster.add(ownerId); // the owner can never be removed
 
         Instant now = Instant.now();
+        boolean removedAny = false;
         for (UUID removed : previous) {
             if (!roster.contains(removed)) {
                 memberRepository.deleteByGroupIdAndUserId(groupId, removed);
+                removedAny = true;
             }
         }
         for (UUID member : roster) {
@@ -112,6 +116,10 @@ public class GroupService {
             }
         }
 
+        // A removal invalidates every distributed Sender Key
+        if (removedAny) {
+            group.setEpoch(group.getEpoch() + 1);
+        }
         group.setUpdatedAt(now);
         groupRepository.save(group);
         logger.debug("Group {} roster updated ({} members)", groupId, roster.size());
@@ -133,6 +141,15 @@ public class GroupService {
     }
 
     // ---- Helpers --------------------------------------------------------------------------
+
+    /**
+     * The current roster of a group as plain user ids, for server-side group fan-out. Returns an
+     * empty list for an unknown group.
+     */
+    @Transactional(readOnly = true)
+    public List<UUID> groupRoster(UUID groupId) {
+        return memberRepository.findUserIdsByGroupId(groupId);
+    }
 
     private Group requireGroup(UUID groupId) {
         return groupRepository.findById(groupId)

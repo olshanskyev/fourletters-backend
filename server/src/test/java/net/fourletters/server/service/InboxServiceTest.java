@@ -3,8 +3,9 @@ package net.fourletters.server.service;
 import net.fourletters.dto.*;
 import net.fourletters.server.broker.ServerRabbitMqService;
 import net.fourletters.server.model.InboxMessage;
-import net.fourletters.server.model.InboxMessageId;
+import net.fourletters.server.model.InboxPending;
 import net.fourletters.server.repository.InboxMessageRepository;
+import net.fourletters.server.repository.InboxPendingRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +37,10 @@ class InboxServiceTest {
     private ServerRabbitMqService rabbitMqService;
     @Mock
     private InboxMessageRepository repository;
+    @Mock
+    private InboxPendingRepository pendingRepository;
+    @Mock
+    private GroupService groupService;
 
     private InboxService service;
 
@@ -44,10 +49,11 @@ class InboxServiceTest {
 
     @BeforeEach
     void setUp() {
-        lenient().when(repository.findByRecipientIdOrderByCreatedAtAsc(any()))
+        lenient().when(repository.findPendingForRecipient(any()))
                 .thenReturn(Collections.emptyList());
         // hold window of 0s so flushExpired() treats accepted messages as already expired.
-        service = new InboxService(rabbitMqService, repository, new PendingReceipts(), 0L);
+        service = new InboxService(rabbitMqService, repository, pendingRepository,
+                groupService, new PendingReceipts(), 0L);
     }
 
     private EncryptedMessage newMessage() {
@@ -55,7 +61,6 @@ class InboxServiceTest {
         m.setMessageId(UUID.randomUUID());
         m.setRecipientId(recipient);
         m.setPayload("cipher");
-        m.setSignature("sig");
         return m;
     }
 
@@ -74,7 +79,8 @@ class InboxServiceTest {
         // this path touches the database zero times — no read, no delete, no write.
         verify(repository, never()).save(any());
         verify(repository, never()).findById(any());
-        verify(repository, never()).deleteByMessageIdAndRecipientId(any(), any());
+        verify(pendingRepository, never()).save(any());
+        verify(pendingRepository, never()).deleteByMessageIdAndRecipientId(any(), any());
         verify(rabbitMqService).publishReceipt(any(), any());
     }
 
@@ -89,8 +95,11 @@ class InboxServiceTest {
         verify(repository).save(captor.capture());
         InboxMessage saved = captor.getValue();
         assertThat(saved.getMessageId()).isEqualTo(m.getMessageId());
-        assertThat(saved.getRecipientId()).isEqualTo(recipient);
         assertThat(saved.getSenderId()).isEqualTo(sender);
+        // A pending row is written for the single recipient.
+        ArgumentCaptor<InboxPending> pendingCaptor = ArgumentCaptor.forClass(InboxPending.class);
+        verify(pendingRepository).save(pendingCaptor.capture());
+        assertThat(pendingCaptor.getValue().getRecipientId()).isEqualTo(recipient);
 
         // After eviction the hot tier no longer returns it (only the cold tier would).
         InboxResponse response = service.getInbox(recipient);
@@ -103,7 +112,7 @@ class InboxServiceTest {
         EncryptedMessage cold = newMessage();
         cold.setSenderId(sender);
         InboxMessage coldRow = InboxMessage.from(cold);
-        when(repository.findByRecipientIdOrderByCreatedAtAsc(recipient))
+        when(repository.findPendingForRecipient(recipient))
                 .thenReturn(List.of(coldRow));
 
         // ...and one accepted live into the hot tier.
@@ -123,12 +132,10 @@ class InboxServiceTest {
         UUID messageId = UUID.randomUUID();
         InboxMessage row = new InboxMessage();
         row.setMessageId(messageId);
-        row.setRecipientId(recipient);
         row.setSenderId(sender);
         row.setPayload("cipher");
-        row.setSignature("sig");
         // Nothing in the hot tier; the message was already flushed.
-        when(repository.findById(new InboxMessageId(messageId, recipient))).thenReturn(Optional.of(row));
+        when(repository.findById(messageId)).thenReturn(Optional.of(row));
 
         DeliveryReceipt receipt = new DeliveryReceipt();
         receipt.setMessageId(messageId);
@@ -136,7 +143,7 @@ class InboxServiceTest {
         receipt.setSignature("sig");
         service.recordReceipt(recipient, receipt);
 
-        verify(repository).deleteByMessageIdAndRecipientId(messageId, recipient);
+        verify(pendingRepository).deleteByMessageIdAndRecipientId(messageId, recipient);
         verify(rabbitMqService).publishReceipt(any(), any());
     }
 
@@ -168,7 +175,7 @@ class InboxServiceTest {
 
         // The copy is dropped while still in the hot tier (no key can decrypt it) — zero DB writes.
         verify(repository, never()).save(any());
-        verify(repository, never()).deleteByMessageIdAndRecipientId(any(), any());
+        verify(pendingRepository, never()).deleteByMessageIdAndRecipientId(any(), any());
 
         // It is relayed to the sender as MESSAGE_UNDECRYPTABLE (not a delivery), preserving type.
         ArgumentCaptor<ReceiptEvent> eventCaptor = ArgumentCaptor.forClass(ReceiptEvent.class);

@@ -34,14 +34,14 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   EncryptedMessage.JSON_PROPERTY_PAYLOAD,
   EncryptedMessage.JSON_PROPERTY_GROUP_ID
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-10T09:32:42.450536800+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-15T13:27:28.119670600+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class EncryptedMessage {
   public static final String JSON_PROPERTY_MESSAGE_ID = "messageId";
   @jakarta.annotation.Nonnull
   private UUID messageId;
 
   public static final String JSON_PROPERTY_RECIPIENT_ID = "recipientId";
-  @jakarta.annotation.Nonnull
+  @jakarta.annotation.Nullable
   private UUID recipientId;
 
   public static final String JSON_PROPERTY_SENDER_ID = "senderId";
@@ -84,28 +84,28 @@ public class EncryptedMessage {
     this.messageId = messageId;
   }
 
-  public EncryptedMessage recipientId(@jakarta.annotation.Nonnull UUID recipientId) {
+  public EncryptedMessage recipientId(@jakarta.annotation.Nullable UUID recipientId) {
     
     this.recipientId = recipientId;
     return this;
   }
 
   /**
-   * ID of the recipient user
+   * ID of the recipient user. Required for a 1:1 message. Omitted for a group message.
    * @return recipientId
    */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_RECIPIENT_ID, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_RECIPIENT_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
 
   public UUID getRecipientId() {
     return recipientId;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_RECIPIENT_ID, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setRecipientId(@jakarta.annotation.Nonnull UUID recipientId) {
+  @JsonProperty(value = JSON_PROPERTY_RECIPIENT_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setRecipientId(@jakarta.annotation.Nullable UUID recipientId) {
     this.recipientId = recipientId;
   }
 
@@ -141,7 +141,7 @@ public class EncryptedMessage {
   }
 
   /**
-   * E2E encrypted Signal ciphertext. Format &#39;&lt;sessionType&gt;.&lt;bodyBase64&gt;&#39; where sessionType is 1 (WhisperMessage, established session) or 3 (PreKeyWhisperMessage, establishes the session). The Server treats it as opaque.
+   * E2E encrypted ciphertext. Format &#39;&lt;sessionType&gt;.&lt;bodyBase64&gt;&#39;. sessionType is 1 (WhisperMessage, established pairwise session) or 3 (PreKeyWhisperMessage, establishes the pairwise session) for a 1:1 payload, or 4 (SenderKeyMessage) for a group payload encrypted once with the sender&#39;s per-group Sender Key.
    * @return payload
    */
   @jakarta.annotation.Nonnull
@@ -166,7 +166,7 @@ public class EncryptedMessage {
   }
 
   /**
-   * Present only for group messages. Identifies the group so the recipient threads the message into the group conversation. The sender encrypts and sends one independent 1:1 copy per member; the Server treats each copy as an ordinary 1:1 message. Omitted for 1:1 messages.
+   * Present only for group messages.
    * @return groupId
    */
   @jakarta.annotation.Nullable

@@ -46,6 +46,12 @@ public class MessageController {
         if (message.getPayload().isBlank()) {
             return ResponseEntity.badRequest().build();
         }
+        // A message targets exactly one destination: a 1:1 recipient or a group (never both/neither).
+        boolean hasRecipient = message.getRecipientId() != null;
+        boolean hasGroup = message.getGroupId() != null;
+        if (hasRecipient == hasGroup) {
+            return ResponseEntity.badRequest().build();
+        }
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(inboxService.accept(message, senderId));
     }
 

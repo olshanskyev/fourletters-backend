@@ -3,7 +3,6 @@ package net.fourletters.server.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 import net.fourletters.dto.EncryptedMessage;
 
@@ -11,28 +10,18 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Cold-tier (durable) inbox row. A message is written here exactly once per recipient — only if
- * it is not confirmed by a delivery receipt within the in-memory hold window. Rows are deleted
- * strictly upon a verified receipt, or read back via {@code GET /inbox}.
- *
- * <p>The key is composite {@code (messageId, recipientId)} so a group message — fanned out by the
- * client to one copy per member, all sharing the {@code messageId} — has an independent durable
- * row per member. {@code groupId} is {@code null} for 1:1 messages.
+ * Cold-tier (durable) inbox row: one payload per message, written only if a message is not confirmed
+ * within the in-memory hold window. Recipients still owed a receipt live in {@code inbox_pending};
+ * {@code groupId} is {@code null} for 1:1 messages.
  */
 @Entity
 @Table(name = "inbox")
-@IdClass(InboxMessageId.class)
 public class InboxMessage {
 
-    /** Client-generated message id; part of the composite key. */
+    /** Client-generated message id; the primary key (one row per message, not per recipient). */
     @Id
     @Column(name = "message_id", nullable = false)
     private UUID messageId;
-
-    /** Target user; part of the composite key (one row per member for group fan-out). */
-    @Id
-    @Column(name = "recipient_id", nullable = false)
-    private UUID recipientId;
 
     @Column(name = "sender_id")
     private UUID senderId;
@@ -55,7 +44,6 @@ public class InboxMessage {
     public static InboxMessage from(EncryptedMessage message) {
         InboxMessage row = new InboxMessage();
         row.messageId = message.getMessageId();
-        row.recipientId = message.getRecipientId();
         row.senderId = message.getSenderId();
         row.payload = message.getPayload();
         row.groupId = message.getGroupId();
@@ -63,11 +51,10 @@ public class InboxMessage {
         return row;
     }
 
-    /** Reconstruct the wire DTO for an {@code /inbox} read. */
+    /** Reconstruct the wire DTO for an {@code /inbox} read (recipientId is set by the caller). */
     public EncryptedMessage toDto() {
         EncryptedMessage message = new EncryptedMessage();
         message.setMessageId(messageId);
-        message.setRecipientId(recipientId);
         message.setSenderId(senderId);
         message.setPayload(payload);
         message.setGroupId(groupId);
@@ -76,9 +63,6 @@ public class InboxMessage {
 
     public UUID getMessageId() { return messageId; }
     public void setMessageId(UUID messageId) { this.messageId = messageId; }
-
-    public UUID getRecipientId() { return recipientId; }
-    public void setRecipientId(UUID recipientId) { this.recipientId = recipientId; }
 
     public UUID getSenderId() { return senderId; }
     public void setSenderId(UUID senderId) { this.senderId = senderId; }

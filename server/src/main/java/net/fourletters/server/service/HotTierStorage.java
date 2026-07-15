@@ -1,6 +1,8 @@
 package net.fourletters.server.service;
 
 import net.fourletters.dto.EncryptedMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -8,155 +10,187 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * The discardable in-memory <b>hot tier</b> of the server-owned inbox.
- *
- * <p>Encapsulates the heap state a message needs while it is held during the post-accept
- * hold window, plus the atomic operations the {@link InboxService} and its sweeper perform
- * on it:
- * <ul>
- *   <li>the per-recipient set of held messages, keyed by message id,</li>
- *   <li>the per-recipient ownership token, keyed by {@link MessageKey}, used as the single
- *       hand-off claim between an incoming receipt and the flush sweeper, and</li>
- *   <li>the per-recipient {@code accept instant} marker, used both to detect hold-window
- *       expiry and to order messages by arrival.</li>
- * </ul>
- *
- * <p>The claim and accept-time maps are keyed by {@link MessageKey} rather than message id alone:
- * a group message is fanned out to one held copy per member, all sharing the client-generated
- * {@code messageId}, so the recipient must be part of the key for the copies not to collide.
- *
- * <p>Durability is intentionally <em>not</em> a concern here — the sender's outbox backs the
- * window — so all state is plain, non-persistent JVM heap.
+ * In-memory hot tier of the inbox: holds accepted messages during the hold window so quickly
+ * confirmed ones never reach the cold tier. Every message is stored once with the set of recipients
+ * still owing a receipt (1:1 = a set of one, group = roster minus sender); each receipt removes one
+ * member and the payload is dropped once the last is gone. The pending set is the idempotency marker
+ * for group messages; a 1:1 message additionally leaves a short-lived {@code settled} tombstone so a
+ * duplicate receipt (after its sole recipient acknowledged) resolves without a cold-tier read.
  */
 class HotTierStorage {
 
-    /** Per-recipient identity of a held copy; group fan-out shares {@code messageId} across members. */
-    record MessageKey(UUID messageId, UUID recipientId) {
+    private static final Logger logger = LoggerFactory.getLogger(HotTierStorage.class);
+
+    /** Cold-tier projection driven at flush time: one payload plus one row per pending recipient. */
+    @FunctionalInterface
+    interface ColdSink {
+        void persist(EncryptedMessage message, Set<UUID> pending);
     }
 
-    /** recipientId -> (messageId -> message). */
-    private final Map<UUID, Map<UUID, EncryptedMessage>> messagesByRecipient = new ConcurrentHashMap<>();
-    /** (messageId, recipientId) -> held; the atomic claim token shared by receipts and the sweeper. */
-    private final Map<MessageKey, Boolean> claims = new ConcurrentHashMap<>();
-    /** (messageId, recipientId) -> accept instant; drives hold-window expiry and arrival ordering. */
-    private final Map<MessageKey, Instant> enqueuedAt = new ConcurrentHashMap<>();
     /**
-     * Short-lived tombstone of copies already acknowledged by a receipt. Lets a later receipt for
-     * the same copy relay without re-checking the cold tier.
+     * Outcome of {@link #acknowledge}: {@code handled} means the hot tier owned the receipt (a live
+     * copy dropped) so the cold tier is skipped; otherwise {@code ABSENT}.
      */
-    private final Map<MessageKey, Instant> settled = new ConcurrentHashMap<>();
+    record Ack(boolean handled, UUID senderId) {
 
-    /** Retain a message in the hot tier and register its ownership and accept time. */
-    void store(EncryptedMessage message) {
-        UUID recipientId = message.getRecipientId();
-        MessageKey key = new MessageKey(message.getMessageId(), recipientId);
-        messagesByRecipient.computeIfAbsent(recipientId, r -> new ConcurrentHashMap<>())
-                .put(message.getMessageId(), message);
-        claims.put(key, Boolean.TRUE);
-        enqueuedAt.put(key, Instant.now());
+        /** Not held here — consult the cold tier. */
+        static final Ack ABSENT = new Ack(false, null);
+
+        /** Already acknowledged here — handled, no relay target. */
+        static final Ack SETTLED = new Ack(true, null);
+
+        /** A live copy was dropped; relay to {@code senderId}. */
+        static Ack held(UUID senderId) {
+            return new Ack(true, senderId);
+        }
     }
 
-    /** A recipient's held messages, in arrival order. */
-    Collection<EncryptedMessage> messagesFor(UUID recipientId) {
-        Map<UUID, EncryptedMessage> pending = messagesByRecipient.get(recipientId);
-        if (pending == null) {
-            return List.of();
+    /** One stored message plus its still-pending recipients. */
+    private static final class Entry {
+        final EncryptedMessage message;
+        final Set<UUID> pending;
+        final Instant enqueuedAt;
+
+        Entry(EncryptedMessage message, Set<UUID> pending) {
+            this.message = message;
+            this.pending = pending;
+            this.enqueuedAt = Instant.now();
         }
-        List<EncryptedMessage> ordered = new ArrayList<>(pending.values());
-        ordered.sort(Comparator.comparing(
-                m -> enqueuedAt.getOrDefault(new MessageKey(m.getMessageId(), recipientId), Instant.EPOCH)));
+    }
+
+    /** messageId -> the single held message. */
+    private final Map<UUID, Entry> messages = new ConcurrentHashMap<>();
+    /** messageId -> claim token, the atomic hand-off between a receipt and the sweeper. */
+    private final Map<UUID, Boolean> claims = new ConcurrentHashMap<>();
+    /** Tombstone of drained 1:1 messages, so a later duplicate receipt need not touch cold. */
+    private final Map<UUID, Instant> settled = new ConcurrentHashMap<>();
+
+    /** Retain {@code message}, owed to {@code recipients}. */
+    void store(EncryptedMessage message, Set<UUID> recipients) {
+        UUID messageId = message.getMessageId();
+        messages.put(messageId, new Entry(message, new CopyOnWriteArraySet<>(recipients)));
+        claims.put(messageId, Boolean.TRUE);
+    }
+
+    /** Whether this tier currently holds the message. */
+    boolean holds(UUID messageId) {
+        return messages.containsKey(messageId);
+    }
+
+    /** Messages still owed to {@code recipientId}, in arrival order, stamped for that recipient. */
+    Collection<EncryptedMessage> pendingFor(UUID recipientId) {
+        List<Entry> entries = new ArrayList<>();
+        for (Entry entry : messages.values()) {
+            if (entry.pending.contains(recipientId)) {
+                entries.add(entry);
+            }
+        }
+        entries.sort(Comparator.comparing(e -> e.enqueuedAt));
+        List<EncryptedMessage> ordered = new ArrayList<>(entries.size());
+        for (Entry entry : entries) {
+            // Stamp this recipient so the client threads it correctly.
+            ordered.add(copyFor(entry.message, recipientId));
+        }
         return ordered;
     }
 
-    /**
-     * Atomically claim and remove a held message on behalf of its rightful recipient. Succeeds
-     * only if {@code recipientId} currently holds a copy <em>and</em> the sweeper has not
-     * already claimed it for flushing — guaranteeing a confirmed-in-window message never hits
-     * the database.
-     *
-     * @return the removed message, or {@code null} if this caller does not own a held copy
-     */
-    EncryptedMessage claimByRecipient(UUID messageId, UUID recipientId) {
-        MessageKey key = new MessageKey(messageId, recipientId);
-        if (claims.remove(key) == null) {
-            return null;
+    /** Acknowledge delivery to one recipient; the {@link Ack} says whether this tier handled it. */
+    Ack acknowledge(UUID messageId, UUID recipientId) {
+        Entry entry = messages.get(messageId);
+        if (entry == null) {
+            // Flushed or drained: a 1:1 tombstone short-circuits a duplicate; else consult cold.
+            return settled.containsKey(messageId) ? Ack.SETTLED : Ack.ABSENT;
         }
-        enqueuedAt.remove(key);
-        return removeFromMessageMap(recipientId, messageId);
+        // Remove this member (a no-op for an absent one, so duplicates are idempotent); drop the
+        // entry once none remain.
+        entry.pending.remove(recipientId);
+        if (entry.pending.isEmpty() && claims.remove(messageId) != null) {
+            messages.remove(messageId);
+            // A 1:1 message (no group) leaves a tombstone so a duplicate receipt need not hit cold.
+            if (entry.message.getGroupId() == null) {
+                markSettled(messageId);
+            }
+        }
+        return Ack.held(entry.message.getSenderId());
     }
 
-    /** Snapshot of held copies whose hold window elapsed at or before {@code cutoff}. */
-    List<MessageKey> expiredKeys(Instant cutoff) {
-        List<MessageKey> expired = new ArrayList<>();
-        for (Map.Entry<MessageKey, Instant> entry : enqueuedAt.entrySet()) {
-            if (!entry.getValue().isAfter(cutoff)) {
-                expired.add(entry.getKey());
+    /** Tombstone a 1:1 message the caller cleared from cold, so a duplicate receipt short-circuits. */
+    void markSettled(UUID messageId) {
+        settled.put(messageId, Instant.now());
+    }
+
+    /** Expire settle tombstones older than {@code cutoff}. */
+    void sweep(Instant cutoff) {
+        settled.entrySet().removeIf(e -> !e.getValue().isAfter(cutoff));
+    }
+
+    /** Flush messages past {@code cutoff} via {@code sink}, then evict them. */
+    void flushExpired(Instant cutoff, ColdSink sink) {
+        for (UUID messageId : expiredKeys(cutoff)) {
+            Entry entry = claimForFlush(messageId);
+            if (entry == null) {
+                continue;
+            }
+            if (entry.pending.isEmpty()) {
+                // Every recipient acknowledged in-window: nothing to persist.
+                evict(messageId);
+                continue;
+            }
+            try {
+                // Persist-then-evict.
+                sink.persist(entry.message, entry.pending);
+                evict(messageId);
+                logger.debug("Flushed message {} ({} pending) to durable inbox",
+                        messageId, entry.pending.size());
+            } catch (RuntimeException e) {
+                releaseClaim(messageId);
+                logger.warn("Failed to flush message {} to durable inbox; will retry", messageId, e);
+            }
+        }
+    }
+
+    /** Messages whose hold window elapsed at or before {@code cutoff}. */
+    private List<UUID> expiredKeys(Instant cutoff) {
+        List<UUID> expired = new ArrayList<>();
+        for (Map.Entry<UUID, Entry> e : messages.entrySet()) {
+            if (!e.getValue().enqueuedAt.isAfter(cutoff)) {
+                expired.add(e.getKey());
             }
         }
         return expired;
     }
 
-    /**
-     * Unconditionally claim a held message for the flush sweeper and return it, ready to be
-     * persisted. A receipt that already claimed it removed this token, so a {@code null}
-     * result means there is nothing left to flush (a concurrent receipt won the race, or the
-     * copy was already evicted); in that case the stale accept marker is dropped here so the
-     * sweeper does not revisit it. The hot copy is intentionally <em>left in place</em> until
-     * {@link #evict(EncryptedMessage)} confirms it is durable — preserving persist-then-evict.
-     *
-     * @return the message to persist, or {@code null} if it is no longer claimable
-     */
-    EncryptedMessage claimForFlush(MessageKey key) {
-        if (claims.remove(key) == null) {
-            enqueuedAt.remove(key);
+    /** Claim a held message for the sweeper, or {@code null} if a receipt already took it. */
+    private Entry claimForFlush(UUID messageId) {
+        if (claims.remove(messageId) == null) {
             return null;
         }
-        EncryptedMessage message = peek(key.recipientId(), key.messageId());
-        if (message == null) {
-            enqueuedAt.remove(key);
-        }
-        return message;
+        return messages.get(messageId);
     }
 
-    /** Drop a hot copy after it has been durably persisted. */
-    void evict(EncryptedMessage message) {
-        MessageKey key = new MessageKey(message.getMessageId(), message.getRecipientId());
-        removeFromMessageMap(message.getRecipientId(), message.getMessageId());
-        enqueuedAt.remove(key);
+    /** Drop a hot copy after it has been persisted. */
+    private void evict(UUID messageId) {
+        messages.remove(messageId);
     }
 
-    /** Release a flush claim back to the recipient after a persist failure, leaving the hot copy intact. */
-    void releaseClaim(EncryptedMessage message) {
-        MessageKey key = new MessageKey(message.getMessageId(), message.getRecipientId());
-        claims.putIfAbsent(key, Boolean.TRUE);
+    /** Release a flush claim after a persist failure, leaving the hot copy intact. */
+    private void releaseClaim(UUID messageId) {
+        claims.putIfAbsent(messageId, Boolean.TRUE);
     }
 
-    /** Remember that a copy was acknowledged so a subsequent receipt need not touch the cold tier. */
-    void markSettled(MessageKey key) {
-        settled.put(key, Instant.now());
-    }
-
-    /** Whether a copy was recently acknowledged (dropped) by an earlier receipt. */
-    boolean isSettled(MessageKey key) {
-        return settled.containsKey(key);
-    }
-
-    /** Drop settle tombstones accepted at or before {@code cutoff} (called by the hold-window sweeper). */
-    void sweepSettled(Instant cutoff) {
-        settled.entrySet().removeIf(e -> !e.getValue().isAfter(cutoff));
-    }
-
-    private EncryptedMessage peek(UUID recipientId, UUID messageId) {
-        Map<UUID, EncryptedMessage> pending = messagesByRecipient.get(recipientId);
-        return pending == null ? null : pending.get(messageId);
-    }
-
-    private EncryptedMessage removeFromMessageMap(UUID recipientId, UUID messageId) {
-        Map<UUID, EncryptedMessage> pending = messagesByRecipient.get(recipientId);
-        return pending == null ? null : pending.remove(messageId);
+    private static EncryptedMessage copyFor(EncryptedMessage source, UUID recipientId) {
+        EncryptedMessage copy = new EncryptedMessage();
+        copy.setMessageId(source.getMessageId());
+        copy.setSenderId(source.getSenderId());
+        copy.setGroupId(source.getGroupId());
+        copy.setPayload(source.getPayload());
+        copy.setRecipientId(recipientId);
+        return copy;
     }
 }

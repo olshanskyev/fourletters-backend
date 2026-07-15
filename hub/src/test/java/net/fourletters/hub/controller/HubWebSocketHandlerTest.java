@@ -55,6 +55,7 @@ class HubWebSocketHandlerTest {
         lenient().when(session.getPrincipal()).thenReturn(principal);
         lenient().when(principal.getName()).thenReturn(userId);
         lenient().when(session.isOpen()).thenReturn(true);
+        lenient().when(session.getId()).thenReturn(UUID.randomUUID().toString());
         lenient().when(channel.isOpen()).thenReturn(true);
     }
 

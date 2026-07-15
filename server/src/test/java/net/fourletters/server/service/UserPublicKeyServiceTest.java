@@ -2,9 +2,9 @@ package net.fourletters.server.service;
 
 import net.fourletters.dto.KeysResponse;
 import net.fourletters.dto.KeysUploadRequest;
-import net.fourletters.dto.OneTimePreKeyDto;
+
 import net.fourletters.dto.PreKeysUploadRequest;
-import net.fourletters.dto.SignedPreKeyDto;
+
 import net.fourletters.server.model.OneTimePreKey;
 import net.fourletters.server.model.UserPublicKey;
 import net.fourletters.server.repository.OneTimePreKeyRepository;
@@ -49,22 +49,22 @@ class UserPublicKeyServiceTest {
         return service;
     }
 
-    private SignedPreKeyDto signedPreKey(int keyId, String pub, String sig) {
-        SignedPreKeyDto spk = new SignedPreKeyDto();
+    private net.fourletters.dto.SignedPreKey signedPreKey(int keyId, String pub, String sig) {
+        net.fourletters.dto.SignedPreKey spk = new net.fourletters.dto.SignedPreKey();
         spk.setKeyId(keyId);
         spk.setPublicKey(pub);
         spk.setSignature(sig);
         return spk;
     }
 
-    private OneTimePreKeyDto preKey(int keyId, String pub) {
-        OneTimePreKeyDto dto = new OneTimePreKeyDto();
+    private net.fourletters.dto.OneTimePreKey preKey(int keyId, String pub) {
+        net.fourletters.dto.OneTimePreKey dto = new net.fourletters.dto.OneTimePreKey();
         dto.setKeyId(keyId);
         dto.setPublicKey(pub);
         return dto;
     }
 
-    private KeysUploadRequest uploadRequest(List<OneTimePreKeyDto> oneTimePreKeys) {
+    private KeysUploadRequest uploadRequest(List<net.fourletters.dto.OneTimePreKey> oneTimePreKeys) {
         KeysUploadRequest request = new KeysUploadRequest();
         request.setRegistrationId(4242);
         request.setIdentityKey("idKey");

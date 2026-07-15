@@ -34,7 +34,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   CreateGroupRequest.JSON_PROPERTY_NAME,
   CreateGroupRequest.JSON_PROPERTY_MEMBERS
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-10T09:32:42.450536800+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-15T13:27:28.119670600+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class CreateGroupRequest {
   public static final String JSON_PROPERTY_NAME = "name";
   @jakarta.annotation.Nonnull

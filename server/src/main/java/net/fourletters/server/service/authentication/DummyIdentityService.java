@@ -13,6 +13,6 @@ public class DummyIdentityService implements IdentityService{
 
     @Override
     public UserInfo getUserInfo(String accessToken) throws IdentityVerificationException {
-        return new UserInfo("ef65f3f9-26dc-4f1b-b674-5182b634fa9d", "Dummy", "User", null);
+        return new UserInfo(accessToken, "Dummy", "User", null);
     }
 }

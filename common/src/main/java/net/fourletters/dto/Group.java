@@ -29,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * A group conversation. The Server owns the roster; messages are sent as one independent 1:1 copy per member, so the Server never holds any group key material.
+ * A group conversation.
  */
 @JsonPropertyOrder({
   Group.JSON_PROPERTY_ID,
@@ -37,9 +37,10 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   Group.JSON_PROPERTY_OWNER_ID,
   Group.JSON_PROPERTY_MEMBERS,
   Group.JSON_PROPERTY_CREATED_AT,
-  Group.JSON_PROPERTY_UPDATED_AT
+  Group.JSON_PROPERTY_UPDATED_AT,
+  Group.JSON_PROPERTY_EPOCH
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-10T09:32:42.450536800+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-15T13:27:28.119670600+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class Group {
   public static final String JSON_PROPERTY_ID = "id";
   @jakarta.annotation.Nonnull
@@ -64,6 +65,10 @@ public class Group {
   public static final String JSON_PROPERTY_UPDATED_AT = "updatedAt";
   @jakarta.annotation.Nullable
   private Long updatedAt;
+
+  public static final String JSON_PROPERTY_EPOCH = "epoch";
+  @jakarta.annotation.Nullable
+  private Integer epoch;
 
   public Group() {
   }
@@ -226,6 +231,31 @@ public class Group {
     this.updatedAt = updatedAt;
   }
 
+  public Group epoch(@jakarta.annotation.Nullable Integer epoch) {
+    
+    this.epoch = epoch;
+    return this;
+  }
+
+  /**
+   * Server-authoritative Sender-Key epoch.
+   * @return epoch
+   */
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_EPOCH, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public Integer getEpoch() {
+    return epoch;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_EPOCH, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setEpoch(@jakarta.annotation.Nullable Integer epoch) {
+    this.epoch = epoch;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -241,12 +271,13 @@ public class Group {
         Objects.equals(this.ownerId, group.ownerId) &&
         Objects.equals(this.members, group.members) &&
         Objects.equals(this.createdAt, group.createdAt) &&
-        Objects.equals(this.updatedAt, group.updatedAt);
+        Objects.equals(this.updatedAt, group.updatedAt) &&
+        Objects.equals(this.epoch, group.epoch);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, name, ownerId, members, createdAt, updatedAt);
+    return Objects.hash(id, name, ownerId, members, createdAt, updatedAt, epoch);
   }
 
   @Override
@@ -259,6 +290,7 @@ public class Group {
     sb.append("    members: ").append(toIndentedString(members)).append("\n");
     sb.append("    createdAt: ").append(toIndentedString(createdAt)).append("\n");
     sb.append("    updatedAt: ").append(toIndentedString(updatedAt)).append("\n");
+    sb.append("    epoch: ").append(toIndentedString(epoch)).append("\n");
     sb.append("}");
     return sb.toString();
   }

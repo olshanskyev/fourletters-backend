@@ -17,8 +17,6 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, GroupM
 
     List<GroupMember> findByUserId(UUID userId);
 
-    boolean existsByGroupIdAndUserId(UUID groupId, UUID userId);
-
     /** The current roster as plain user ids. */
     @Query("SELECT m.userId FROM GroupMember m WHERE m.groupId = :groupId")
     List<UUID> findUserIdsByGroupId(@Param("groupId") UUID groupId);
