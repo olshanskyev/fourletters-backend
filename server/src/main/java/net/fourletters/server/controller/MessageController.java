@@ -6,6 +6,7 @@ import net.fourletters.dto.EncryptedMessage;
 import net.fourletters.dto.InboxResponse;
 import net.fourletters.dto.MessageBatchRequest;
 import net.fourletters.dto.MessageBatchResponse;
+import net.fourletters.dto.ReceiptBatchRequest;
 import net.fourletters.server.service.InboxService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,6 +94,20 @@ public class MessageController {
             return ResponseEntity.badRequest().build();
         }
         inboxService.recordReceipt(recipientId, receipt);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping(value = "/receipts/batch", produces = "application/json")
+    public ResponseEntity<Void> submitReceipts(@RequestBody ReceiptBatchRequest request) {
+        UUID recipientId = SecurityUtils.currentUserId();
+        if (recipientId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        List<DeliveryReceipt> receipts = request != null ? request.getReceipts() : null;
+        if (receipts == null || receipts.isEmpty() || receipts.size() > MAX_BATCH_SIZE) {
+            return ResponseEntity.badRequest().build();
+        }
+        inboxService.recordReceipts(recipientId, receipts);
         return ResponseEntity.noContent().build();
     }
 }

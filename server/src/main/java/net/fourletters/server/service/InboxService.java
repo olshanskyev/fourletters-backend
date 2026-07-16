@@ -219,6 +219,15 @@ public class InboxService {
     }
 
     /**
+     * Record a batch of receipts from the authenticated recipient.
+     */
+    public void recordReceipts(UUID recipientId, java.util.List<DeliveryReceipt> receipts) {
+        for (DeliveryReceipt receipt : receipts) {
+            recordReceipt(recipientId, receipt);
+        }
+    }
+
+    /**
      * Drop the retained copy from whichever tier holds it, for this recipient (1:1 or group).
      *
      * @return the original sender id (to relay the receipt), or {@code null} if nothing was held

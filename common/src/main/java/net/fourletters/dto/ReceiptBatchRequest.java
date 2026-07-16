@@ -20,79 +20,59 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import java.util.UUID;
-import net.fourletters.dto.PublicKeySet;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import net.fourletters.dto.DeliveryReceipt;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * KeysResponse
+ * Submits several signed receipts in one call.
  */
 @JsonPropertyOrder({
-  KeysResponse.JSON_PROPERTY_USER_ID,
-  KeysResponse.JSON_PROPERTY_KEYS
+  ReceiptBatchRequest.JSON_PROPERTY_RECEIPTS
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-16T11:55:01.971963700+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
-public class KeysResponse {
-  public static final String JSON_PROPERTY_USER_ID = "userId";
+public class ReceiptBatchRequest {
+  public static final String JSON_PROPERTY_RECEIPTS = "receipts";
   @jakarta.annotation.Nonnull
-  private UUID userId;
+  private List<DeliveryReceipt> receipts = new ArrayList<>();
 
-  public static final String JSON_PROPERTY_KEYS = "keys";
-  @jakarta.annotation.Nonnull
-  private PublicKeySet keys;
-
-  public KeysResponse() {
+  public ReceiptBatchRequest() {
   }
 
-  public KeysResponse userId(@jakarta.annotation.Nonnull UUID userId) {
+  public ReceiptBatchRequest receipts(@jakarta.annotation.Nonnull List<DeliveryReceipt> receipts) {
     
-    this.userId = userId;
+    this.receipts = receipts;
+    return this;
+  }
+
+  public ReceiptBatchRequest addReceiptsItem(DeliveryReceipt receiptsItem) {
+    if (this.receipts == null) {
+      this.receipts = new ArrayList<>();
+    }
+    this.receipts.add(receiptsItem);
     return this;
   }
 
   /**
-   * The user id these public keys belong to.
-   * @return userId
+   * The signed receipts to record, capped per request.
+   * @return receipts
    */
   @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_USER_ID, required = true)
+  @JsonProperty(value = JSON_PROPERTY_RECEIPTS, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
-  public UUID getUserId() {
-    return userId;
+  public List<DeliveryReceipt> getReceipts() {
+    return receipts;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_USER_ID, required = true)
+  @JsonProperty(value = JSON_PROPERTY_RECEIPTS, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setUserId(@jakarta.annotation.Nonnull UUID userId) {
-    this.userId = userId;
-  }
-
-  public KeysResponse keys(@jakarta.annotation.Nonnull PublicKeySet keys) {
-    
-    this.keys = keys;
-    return this;
-  }
-
-  /**
-   * Get keys
-   * @return keys
-   */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-
-  public PublicKeySet getKeys() {
-    return keys;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_KEYS, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setKeys(@jakarta.annotation.Nonnull PublicKeySet keys) {
-    this.keys = keys;
+  public void setReceipts(@jakarta.annotation.Nonnull List<DeliveryReceipt> receipts) {
+    this.receipts = receipts;
   }
 
 
@@ -104,22 +84,20 @@ public class KeysResponse {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    KeysResponse keysResponse = (KeysResponse) o;
-    return Objects.equals(this.userId, keysResponse.userId) &&
-        Objects.equals(this.keys, keysResponse.keys);
+    ReceiptBatchRequest receiptBatchRequest = (ReceiptBatchRequest) o;
+    return Objects.equals(this.receipts, receiptBatchRequest.receipts);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(userId, keys);
+    return Objects.hash(receipts);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class KeysResponse {\n");
-    sb.append("    userId: ").append(toIndentedString(userId)).append("\n");
-    sb.append("    keys: ").append(toIndentedString(keys)).append("\n");
+    sb.append("class ReceiptBatchRequest {\n");
+    sb.append("    receipts: ").append(toIndentedString(receipts)).append("\n");
     sb.append("}");
     return sb.toString();
   }

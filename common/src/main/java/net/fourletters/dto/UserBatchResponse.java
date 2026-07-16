@@ -33,7 +33,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 @JsonPropertyOrder({
   UserBatchResponse.JSON_PROPERTY_USERS
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-15T13:27:28.119670600+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-16T11:55:01.971963700+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
 public class UserBatchResponse {
   public static final String JSON_PROPERTY_USERS = "users";
   @jakarta.annotation.Nonnull
