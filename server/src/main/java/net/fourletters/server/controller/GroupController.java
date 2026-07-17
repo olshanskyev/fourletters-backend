@@ -3,6 +3,7 @@ package net.fourletters.server.controller;
 import net.fourletters.dto.CreateGroupRequest;
 import net.fourletters.dto.Group;
 import net.fourletters.dto.GroupSummary;
+import net.fourletters.dto.UpdateGroupRequest;
 import net.fourletters.dto.UpdateMembersRequest;
 import net.fourletters.server.service.GroupService;
 import net.fourletters.server.util.SecurityUtils;
@@ -70,6 +71,16 @@ public class GroupController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         return ResponseEntity.ok(groupService.updateGroupMembers(ownerId, groupId, request));
+    }
+
+    @PatchMapping(value = "/{groupId}", produces = "application/json")
+    public ResponseEntity<Group> updateGroup(@PathVariable("groupId") UUID groupId,
+                                             @RequestBody UpdateGroupRequest request) {
+        UUID ownerId = SecurityUtils.currentUserId();
+        if (ownerId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(groupService.updateGroup(ownerId, groupId, request));
     }
 
     @DeleteMapping(value = "/{groupId}/members/me")

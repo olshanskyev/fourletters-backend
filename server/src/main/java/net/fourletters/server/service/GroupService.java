@@ -29,6 +29,12 @@ public class GroupService {
 
     private static final Logger logger = LoggerFactory.getLogger(GroupService.class);
 
+    /**
+     * Upper bound for a stored avatar data URL. The client downscales to 256px and caps the encoded
+     * payload at ~200KB; this leaves headroom for base64 overhead while rejecting abuse.
+     */
+    private static final int MAX_AVATAR_URL_LENGTH = 512 * 1024;
+
     private final GroupRepository groupRepository;
     private final GroupMemberRepository memberRepository;
 
@@ -52,6 +58,7 @@ public class GroupService {
         group.setId(UUID.randomUUID());
         group.setName(request.getName());
         group.setOwnerId(ownerId);
+        group.setAvatarUrl(sanitizeAvatarUrl(request.getAvatarUrl()));
         group.setCreatedAt(now);
         group.setUpdatedAt(now);
         groupRepository.save(group);
@@ -126,6 +133,31 @@ public class GroupService {
         return toGroupDto(group, now);
     }
 
+    /** Owner-only: partially update a group's metadata (name and/or avatar). */
+    @Transactional
+    public net.fourletters.dto.Group updateGroup(UUID ownerId, UUID groupId,
+                                                 net.fourletters.dto.UpdateGroupRequest request) {
+        Group group = requireOwnedGroup(groupId, ownerId);
+        if (request != null) {
+            // A null field means "leave unchanged"; the avatar additionally treats "" as "clear".
+            if (request.getName() != null) {
+                String name = request.getName().trim();
+                if (name.isBlank()) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "name must not be blank");
+                }
+                group.setName(name);
+            }
+            if (request.getAvatarUrl() != null) {
+                group.setAvatarUrl(sanitizeAvatarUrl(request.getAvatarUrl()));
+            }
+        }
+        Instant now = Instant.now();
+        group.setUpdatedAt(now);
+        groupRepository.save(group);
+        logger.debug("Group {} metadata updated", groupId);
+        return toGroupDto(group, now);
+    }
+
     /**
      * Caller removes themselves from a group. Owners cannot leave (they must transfer or delete the
      * group). Idempotent: leaving a group you are not in is a no-op.
@@ -162,6 +194,17 @@ public class GroupService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "only the owner may administer the group");
         }
         return group;
+    }
+
+    /** Normalize an incoming avatar data URL: blank becomes null (clear), oversize is rejected. */
+    private String sanitizeAvatarUrl(String avatarUrl) {
+        if (avatarUrl == null || avatarUrl.isBlank()) {
+            return null;
+        }
+        if (avatarUrl.length() > MAX_AVATAR_URL_LENGTH) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "avatar too large");
+        }
+        return avatarUrl;
     }
 
     /** Load the current roster and let the entity assemble its full wire view. */

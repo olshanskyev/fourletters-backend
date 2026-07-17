@@ -29,6 +29,10 @@ public class Group {
     @Column(name = "owner_id", nullable = false)
     private UUID ownerId;
 
+    /** Group avatar image as a base64 data URL, stored plaintext. Null when unset. */
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     /**
      * Server-authoritative Sender-Key epoch. Incremented only when a member is removed, which
      * invalidates every distributed Sender Key.
@@ -70,6 +74,7 @@ public class Group {
         dto.setName(name);
         dto.setOwnerId(ownerId);
         dto.setMembers(members);
+        dto.setAvatarUrl(avatarUrl);
         dto.setEpoch(epoch);
         dto.setCreatedAt(createdAt.toEpochMilli());
         dto.setUpdatedAt(effectiveUpdatedAt.toEpochMilli());
@@ -84,6 +89,9 @@ public class Group {
 
     public UUID getOwnerId() { return ownerId; }
     public void setOwnerId(UUID ownerId) { this.ownerId = ownerId; }
+
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
 
     public int getEpoch() { return epoch; }
     public void setEpoch(int epoch) { this.epoch = epoch; }

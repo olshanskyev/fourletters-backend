@@ -70,6 +70,7 @@
                                 <modelPackage>net.fourletters.dto</modelPackage>
                                 <serializationLibrary>jackson</serializationLibrary>
                                 <useJakartaEe>true</useJakartaEe>
+                                <hideGenerationTimestamp>true</hideGenerationTimestamp>
                             </configOptions>
                         </configuration>
                     </execution>

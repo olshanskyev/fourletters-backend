@@ -36,11 +36,12 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   Group.JSON_PROPERTY_NAME,
   Group.JSON_PROPERTY_OWNER_ID,
   Group.JSON_PROPERTY_MEMBERS,
+  Group.JSON_PROPERTY_AVATAR_URL,
   Group.JSON_PROPERTY_CREATED_AT,
   Group.JSON_PROPERTY_UPDATED_AT,
   Group.JSON_PROPERTY_EPOCH
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-16T11:55:01.971963700+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.21.0")
 public class Group {
   public static final String JSON_PROPERTY_ID = "id";
   @jakarta.annotation.Nonnull
@@ -57,6 +58,10 @@ public class Group {
   public static final String JSON_PROPERTY_MEMBERS = "members";
   @jakarta.annotation.Nonnull
   private List<GroupMember> members = new ArrayList<>();
+
+  public static final String JSON_PROPERTY_AVATAR_URL = "avatarUrl";
+  @jakarta.annotation.Nullable
+  private String avatarUrl;
 
   public static final String JSON_PROPERTY_CREATED_AT = "createdAt";
   @jakarta.annotation.Nullable
@@ -181,6 +186,31 @@ public class Group {
     this.members = members;
   }
 
+  public Group avatarUrl(@jakarta.annotation.Nullable String avatarUrl) {
+    
+    this.avatarUrl = avatarUrl;
+    return this;
+  }
+
+  /**
+   * Group avatar image as a base64 data URL, if set.
+   * @return avatarUrl
+   */
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_AVATAR_URL, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public String getAvatarUrl() {
+    return avatarUrl;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_AVATAR_URL, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setAvatarUrl(@jakarta.annotation.Nullable String avatarUrl) {
+    this.avatarUrl = avatarUrl;
+  }
+
   public Group createdAt(@jakarta.annotation.Nullable Long createdAt) {
     
     this.createdAt = createdAt;
@@ -270,6 +300,7 @@ public class Group {
         Objects.equals(this.name, group.name) &&
         Objects.equals(this.ownerId, group.ownerId) &&
         Objects.equals(this.members, group.members) &&
+        Objects.equals(this.avatarUrl, group.avatarUrl) &&
         Objects.equals(this.createdAt, group.createdAt) &&
         Objects.equals(this.updatedAt, group.updatedAt) &&
         Objects.equals(this.epoch, group.epoch);
@@ -277,7 +308,7 @@ public class Group {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, name, ownerId, members, createdAt, updatedAt, epoch);
+    return Objects.hash(id, name, ownerId, members, avatarUrl, createdAt, updatedAt, epoch);
   }
 
   @Override
@@ -288,6 +319,7 @@ public class Group {
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    ownerId: ").append(toIndentedString(ownerId)).append("\n");
     sb.append("    members: ").append(toIndentedString(members)).append("\n");
+    sb.append("    avatarUrl: ").append(toIndentedString(avatarUrl)).append("\n");
     sb.append("    createdAt: ").append(toIndentedString(createdAt)).append("\n");
     sb.append("    updatedAt: ").append(toIndentedString(updatedAt)).append("\n");
     sb.append("    epoch: ").append(toIndentedString(epoch)).append("\n");

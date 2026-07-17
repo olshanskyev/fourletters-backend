@@ -20,104 +20,62 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * Creates a group with the caller as owner and the given initial roster.
+ * Owner-only partial update of a group&#39;s metadata. Only the provided fields are changed.
  */
 @JsonPropertyOrder({
-  CreateGroupRequest.JSON_PROPERTY_NAME,
-  CreateGroupRequest.JSON_PROPERTY_MEMBERS,
-  CreateGroupRequest.JSON_PROPERTY_AVATAR_URL
+  UpdateGroupRequest.JSON_PROPERTY_NAME,
+  UpdateGroupRequest.JSON_PROPERTY_AVATAR_URL
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.21.0")
-public class CreateGroupRequest {
+public class UpdateGroupRequest {
   public static final String JSON_PROPERTY_NAME = "name";
-  @jakarta.annotation.Nonnull
+  @jakarta.annotation.Nullable
   private String name;
-
-  public static final String JSON_PROPERTY_MEMBERS = "members";
-  @jakarta.annotation.Nonnull
-  private List<UUID> members = new ArrayList<>();
 
   public static final String JSON_PROPERTY_AVATAR_URL = "avatarUrl";
   @jakarta.annotation.Nullable
   private String avatarUrl;
 
-  public CreateGroupRequest() {
+  public UpdateGroupRequest() {
   }
 
-  public CreateGroupRequest name(@jakarta.annotation.Nonnull String name) {
+  public UpdateGroupRequest name(@jakarta.annotation.Nullable String name) {
     
     this.name = name;
     return this;
   }
 
   /**
-   * Group name (plaintext).
+   * New group name (plaintext). Omit to leave unchanged.
    * @return name
    */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_NAME, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_NAME, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
 
   public String getName() {
     return name;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_NAME, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setName(@jakarta.annotation.Nonnull String name) {
+  @JsonProperty(value = JSON_PROPERTY_NAME, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setName(@jakarta.annotation.Nullable String name) {
     this.name = name;
   }
 
-  public CreateGroupRequest members(@jakarta.annotation.Nonnull List<UUID> members) {
-    
-    this.members = members;
-    return this;
-  }
-
-  public CreateGroupRequest addMembersItem(UUID membersItem) {
-    if (this.members == null) {
-      this.members = new ArrayList<>();
-    }
-    this.members.add(membersItem);
-    return this;
-  }
-
-  /**
-   * Initial member user ids (the owner is added automatically if omitted).
-   * @return members
-   */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_MEMBERS, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-
-  public List<UUID> getMembers() {
-    return members;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_MEMBERS, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setMembers(@jakarta.annotation.Nonnull List<UUID> members) {
-    this.members = members;
-  }
-
-  public CreateGroupRequest avatarUrl(@jakarta.annotation.Nullable String avatarUrl) {
+  public UpdateGroupRequest avatarUrl(@jakarta.annotation.Nullable String avatarUrl) {
     
     this.avatarUrl = avatarUrl;
     return this;
   }
 
   /**
-   * Optional group avatar image as a base64 data URL.
+   * Base64 data URL to set the avatar, an empty string to clear it, or omit to leave it unchanged.
    * @return avatarUrl
    */
   @jakarta.annotation.Nullable
@@ -144,23 +102,21 @@ public class CreateGroupRequest {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    CreateGroupRequest createGroupRequest = (CreateGroupRequest) o;
-    return Objects.equals(this.name, createGroupRequest.name) &&
-        Objects.equals(this.members, createGroupRequest.members) &&
-        Objects.equals(this.avatarUrl, createGroupRequest.avatarUrl);
+    UpdateGroupRequest updateGroupRequest = (UpdateGroupRequest) o;
+    return Objects.equals(this.name, updateGroupRequest.name) &&
+        Objects.equals(this.avatarUrl, updateGroupRequest.avatarUrl);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, members, avatarUrl);
+    return Objects.hash(name, avatarUrl);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class CreateGroupRequest {\n");
+    sb.append("class UpdateGroupRequest {\n");
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
-    sb.append("    members: ").append(toIndentedString(members)).append("\n");
     sb.append("    avatarUrl: ").append(toIndentedString(avatarUrl)).append("\n");
     sb.append("}");
     return sb.toString();

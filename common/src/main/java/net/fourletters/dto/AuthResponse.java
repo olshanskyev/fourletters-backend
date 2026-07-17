@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   AuthResponse.JSON_PROPERTY_ACCESS_TOKEN,
   AuthResponse.JSON_PROPERTY_USER
 })
-@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-07-16T11:55:01.971963700+03:00[Europe/Athens]", comments = "Generator version: 7.21.0")
+@jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.21.0")
 public class AuthResponse {
   public static final String JSON_PROPERTY_ACCESS_TOKEN = "access_token";
   @jakarta.annotation.Nonnull
