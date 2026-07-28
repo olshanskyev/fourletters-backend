@@ -40,43 +40,51 @@
             <artifactId>jspecify</artifactId>
         </dependency>
     </dependencies>
-    <build>
-        <plugins>
-            <!-- used to generate models from OpenAPI spec, but maintain them manually for better control -->
-            <plugin>
-                <groupId>org.openapitools</groupId>
-                <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>7.21.0</version>
-                <executions>
-                    <execution>
-                        <id>generate-models</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <inputSpec>${project.basedir}/../../fourletters-meta/doc/models.json</inputSpec>
-                            <output>${project.basedir}</output>
-                            <generatorName>java</generatorName>
-                            <library>webclient</library>
 
-                            <generateModels>true</generateModels>
-                            <generateModelTests>false</generateModelTests>
-                            <generateModelDocumentation>false</generateModelDocumentation>
-                            <generateApiTests>false</generateApiTests>
-                            <generateApiDocumentation>false</generateApiDocumentation>
-                            <generateApis>false</generateApis>
-                            <generateSupportingFiles>false</generateSupportingFiles>
-                            <configOptions>
-                                <modelPackage>net.fourletters.dto</modelPackage>
-                                <serializationLibrary>jackson</serializationLibrary>
-                                <useJakartaEe>true</useJakartaEe>
-                                <hideGenerationTimestamp>true</hideGenerationTimestamp>
-                            </configOptions>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+    <profiles>
+        <!-- Model generation is opt-in: run `mvn generate-sources -Pgenerate-models` manually.
+             It is NOT part of the normal build because the DTOs are maintained by hand and the
+             OpenAPI spec lives in the sibling fourletters-meta repo, which is not present in CI. -->
+        <profile>
+            <id>generate-models</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.openapitools</groupId>
+                        <artifactId>openapi-generator-maven-plugin</artifactId>
+                        <version>7.21.0</version>
+                        <executions>
+                            <execution>
+                                <id>generate-models</id>
+                                <goals>
+                                    <goal>generate</goal>
+                                </goals>
+                                <configuration>
+                                    <inputSpec>${project.basedir}/../../fourletters-meta/doc/models.json</inputSpec>
+                                    <output>${project.basedir}</output>
+                                    <generatorName>java</generatorName>
+                                    <library>webclient</library>
+
+                                    <generateModels>true</generateModels>
+                                    <generateModelTests>false</generateModelTests>
+                                    <generateModelDocumentation>false</generateModelDocumentation>
+                                    <generateApiTests>false</generateApiTests>
+                                    <generateApiDocumentation>false</generateApiDocumentation>
+                                    <generateApis>false</generateApis>
+                                    <generateSupportingFiles>false</generateSupportingFiles>
+                                    <configOptions>
+                                        <modelPackage>net.fourletters.dto</modelPackage>
+                                        <serializationLibrary>jackson</serializationLibrary>
+                                        <useJakartaEe>true</useJakartaEe>
+                                        <hideGenerationTimestamp>true</hideGenerationTimestamp>
+                                    </configOptions>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
