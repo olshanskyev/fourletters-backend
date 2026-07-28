@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * In-memory hot tier of the inbox: holds accepted messages during the hold window so quickly
@@ -56,11 +57,13 @@ class HotTierStorage {
         final EncryptedMessage message;
         final Set<UUID> pending;
         final Instant enqueuedAt;
+        final long sequenceId;
 
-        Entry(EncryptedMessage message, Set<UUID> pending) {
+        Entry(EncryptedMessage message, Set<UUID> pending, long sequenceId) {
             this.message = message;
             this.pending = pending;
             this.enqueuedAt = Instant.now();
+            this.sequenceId = sequenceId;
         }
     }
 
@@ -71,10 +74,12 @@ class HotTierStorage {
     /** Tombstone of drained 1:1 messages, so a later duplicate receipt need not touch cold. */
     private final Map<UUID, Instant> settled = new ConcurrentHashMap<>();
 
+    private final AtomicLong sequence = new AtomicLong();
+
     /** Retain {@code message}, owed to {@code recipients}. */
     void store(EncryptedMessage message, Set<UUID> recipients) {
         UUID messageId = message.getMessageId();
-        messages.put(messageId, new Entry(message, new CopyOnWriteArraySet<>(recipients)));
+        messages.put(messageId, new Entry(message, new CopyOnWriteArraySet<>(recipients), sequence.getAndIncrement()));
         claims.put(messageId, Boolean.TRUE);
     }
 
@@ -91,7 +96,7 @@ class HotTierStorage {
                 entries.add(entry);
             }
         }
-        entries.sort(Comparator.comparing(e -> e.enqueuedAt));
+        entries.sort(Comparator.comparingLong(e -> e.sequenceId));
         List<EncryptedMessage> ordered = new ArrayList<>(entries.size());
         for (Entry entry : entries) {
             // Stamp this recipient so the client threads it correctly.
