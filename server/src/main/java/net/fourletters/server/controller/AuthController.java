@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import net.fourletters.dto.AuthRequest;
@@ -71,9 +72,26 @@ class AuthController {
 
         IdentityService identityService = identityServiceFactory.getIdentityService(authProvider);
         IdentityService.UserInfo userInfo = identityService.getUserInfo(authRequest.getToken());
+        userInfo = applyClientDisplayHints(userInfo, authRequest);
 
         AuthService.AuthResult result = authService.processAuth(userInfo, authProvider);
         return buildAuthOk(result);
+    }
+
+    /**
+     * Overlays optional client-supplied display fields (name, avatar) onto the verified identity.
+     * The user id always comes from the verified token and is never overridden; the display fields
+     * are cosmetic and used only when the provider returns masked data (e.g. VK public_info).
+     */
+    private IdentityService.UserInfo applyClientDisplayHints(IdentityService.UserInfo userInfo,
+                                                             AuthRequest authRequest) {
+        String firstName = StringUtils.hasText(authRequest.getFirstName())
+                ? authRequest.getFirstName() : userInfo.firstName();
+        String lastName = StringUtils.hasText(authRequest.getLastName())
+                ? authRequest.getLastName() : userInfo.lastName();
+        String avatarUrl = authRequest.getAvatarUrl() != null
+                ? authRequest.getAvatarUrl().toString() : userInfo.avatarUrl();
+        return new IdentityService.UserInfo(userInfo.id(), firstName, lastName, avatarUrl);
     }
 
     @PostMapping(value = "/refresh")

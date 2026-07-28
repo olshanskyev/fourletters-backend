@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.net.URI;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
@@ -27,13 +28,28 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
  * AuthRequest
  */
 @JsonPropertyOrder({
-  AuthRequest.JSON_PROPERTY_TOKEN
+  AuthRequest.JSON_PROPERTY_TOKEN,
+  AuthRequest.JSON_PROPERTY_FIRST_NAME,
+  AuthRequest.JSON_PROPERTY_LAST_NAME,
+  AuthRequest.JSON_PROPERTY_AVATAR_URL
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.21.0")
 public class AuthRequest {
   public static final String JSON_PROPERTY_TOKEN = "token";
   @jakarta.annotation.Nonnull
   private String token;
+
+  public static final String JSON_PROPERTY_FIRST_NAME = "firstName";
+  @jakarta.annotation.Nullable
+  private String firstName;
+
+  public static final String JSON_PROPERTY_LAST_NAME = "lastName";
+  @jakarta.annotation.Nullable
+  private String lastName;
+
+  public static final String JSON_PROPERTY_AVATAR_URL = "avatarUrl";
+  @jakarta.annotation.Nullable
+  private URI avatarUrl;
 
   public AuthRequest() {
   }
@@ -45,7 +61,7 @@ public class AuthRequest {
   }
 
   /**
-   * The identity token provided by the third-party OAuth provider.
+   * The identity token provided by the third-party OAuth provider. This is the security anchor and is always verified server-side (VK id_token, Google credential).
    * @return token
    */
   @jakarta.annotation.Nonnull
@@ -63,6 +79,81 @@ public class AuthRequest {
     this.token = token;
   }
 
+  public AuthRequest firstName(@jakarta.annotation.Nullable String firstName) {
+    
+    this.firstName = firstName;
+    return this;
+  }
+
+  /**
+   * Optional client-supplied first name. Used for presentation only when the verified provider returns masked profile data (e.g. VK public_info). Never used for authentication.
+   * @return firstName
+   */
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_FIRST_NAME, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public String getFirstName() {
+    return firstName;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_FIRST_NAME, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setFirstName(@jakarta.annotation.Nullable String firstName) {
+    this.firstName = firstName;
+  }
+
+  public AuthRequest lastName(@jakarta.annotation.Nullable String lastName) {
+    
+    this.lastName = lastName;
+    return this;
+  }
+
+  /**
+   * Optional client-supplied last name. Used for presentation only; never used for authentication.
+   * @return lastName
+   */
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_LAST_NAME, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public String getLastName() {
+    return lastName;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_LAST_NAME, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setLastName(@jakarta.annotation.Nullable String lastName) {
+    this.lastName = lastName;
+  }
+
+  public AuthRequest avatarUrl(@jakarta.annotation.Nullable URI avatarUrl) {
+    
+    this.avatarUrl = avatarUrl;
+    return this;
+  }
+
+  /**
+   * Optional client-supplied avatar URL. Used for presentation only; never used for authentication.
+   * @return avatarUrl
+   */
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_AVATAR_URL, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public URI getAvatarUrl() {
+    return avatarUrl;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_AVATAR_URL, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setAvatarUrl(@jakarta.annotation.Nullable URI avatarUrl) {
+    this.avatarUrl = avatarUrl;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -73,12 +164,15 @@ public class AuthRequest {
       return false;
     }
     AuthRequest authRequest = (AuthRequest) o;
-    return Objects.equals(this.token, authRequest.token);
+    return Objects.equals(this.token, authRequest.token) &&
+        Objects.equals(this.firstName, authRequest.firstName) &&
+        Objects.equals(this.lastName, authRequest.lastName) &&
+        Objects.equals(this.avatarUrl, authRequest.avatarUrl);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(token);
+    return Objects.hash(token, firstName, lastName, avatarUrl);
   }
 
   @Override
@@ -86,6 +180,9 @@ public class AuthRequest {
     StringBuilder sb = new StringBuilder();
     sb.append("class AuthRequest {\n");
     sb.append("    token: ").append(toIndentedString(token)).append("\n");
+    sb.append("    firstName: ").append(toIndentedString(firstName)).append("\n");
+    sb.append("    lastName: ").append(toIndentedString(lastName)).append("\n");
+    sb.append("    avatarUrl: ").append(toIndentedString(avatarUrl)).append("\n");
     sb.append("}");
     return sb.toString();
   }
