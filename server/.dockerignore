@@ -1,0 +1,3 @@
+# Only the packaged fat jar is needed as build context.
+*
+!target/*.jar

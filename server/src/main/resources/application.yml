@@ -7,13 +7,95 @@ server:
   ssl:
     enabled: false
 
+# Shared configuration applied to every profile; the profile documents below only override
+# the values that actually differ between environments.
+spring:
+  application:
+    name: fourletters-server
+  datasource:
+    hikari:
+      pool-name: hikariPool
+      connection-timeout: ${DATABASE_CONNECTION_TIMEOUT:30000}
+      idle-timeout: ${DATABASE_IDLE_TIMEOUT:600000}
+      max-lifetime: ${DATABASE_MAX_LIFETIME:1800000}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: ${DATABASE_BATCH_SIZE:50}
+        order_inserts: true
+        order_updates: true
+  rabbitmq:
+    # Surface unroutable (mandatory) publishes back to the Server so receipts for an offline
+    # sender can be retained for /inbox pull; routable receipts (online sender) are not stored.
+    publisher-returns: true
+# Web Push (VAPID) — wakes an offline recipient. push is disabled (no-op) when the key pair is absent.
+push:
+  vapid:
+    public-key: ${PUSH_VAPID_PUBLIC_KEY:}
+    private-key: ${PUSH_VAPID_PRIVATE_KEY:}
+    # Contact URI required by the Web Push spec (mailto: or https:).
+    subject: ${PUSH_VAPID_SUBJECT:mailto:olshanskyev@gmail.com}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: default
+
+  # PostgreSQL Configuration
+  datasource:
+    # reWriteBatchedInserts collapses a JDBC insert batch into one multi-row INSERT statement.
+    url: jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5432}/${DATABASE_NAME:FOURLETTERS}?reWriteBatchedInserts=true
+    username: ${DATABASE_USER}
+    password: ${DATABASE_PASSWORD}
+    defaultSchema: ${DATABASE_SCHEMA:FOURLETTERS}
+    hikari:
+      maximum-pool-size: ${DATABASE_MAX_POOL_SIZE:20}
+      minimum-idle: ${DATABASE_MIN_IDLE:5}
+  jpa:
+    show-sql: false
+
+  # RabbitMQ Configuration — the Server connects with its own scoped user (declare + publish).
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_SERVER_USER}
+    password: ${RABBITMQ_SERVER_PASSWORD}
+    virtual-host: ${RABBITMQ_VHOST:/}
+rest:
+  cors:
+    allowedOriginPatterns: ${ALLOWED_ORIGIN_PATTERNS}
+  jwt:
+    accessTokenValiditySec: ${JWT_ACCESS_TOKEN_VALIDITY_SEC:900}
+    refreshTokenValiditySec: ${JWT_REFRESH_TOKEN_VALIDITY_SEC:604800}
+    issuer: ${JWT_ISSUER:fourletters}
+    # PEM key paths for JWT signing (required).
+    privateKeyPath: ${JWT_PRIVATE_KEY_PATH}
+    publicKeyPath: ${JWT_PUBLIC_KEY_PATH}
+google:
+  clientId: ${GOOGLE_CLIENT_ID}
+# Shared secret a Hub must present (Authorization: Bearer) to register and be provisioned a relay queue.
+hub:
+  registration:
+    secret: ${HUB_REGISTRATION_SECRET}
+# Server-owned inbox
+inbox:
+  # Seconds a message is held in memory awaiting a receipt before it is flushed to PostgreSQL.
+  hold-window-seconds: ${INBOX_HOLD_WINDOW_SECONDS:30}
+  # How often the sweeper scans the hot tier for expired (unconfirmed) messages.
+  flush-interval-ms: ${INBOX_FLUSH_INTERVAL_MS:5000}
+push:
+  # At most one push per recipient within this window; further triggers are collapsed.
+  debounce-seconds: ${PUSH_DEBOUNCE_SECONDS:15}
+
 ---
 spring:
   config:
     activate:
       on-profile: local
-  application:
-    name: fourletters-server
 
   # PostgreSQL Configuration
   datasource:
@@ -23,22 +105,10 @@ spring:
     password: fourletters
     defaultSchema: FOURLETTERS
     hikari:
-      pool-name: hikariPool
       maximum-pool-size: 20
       minimum-idle: 5
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
   jpa:
-    hibernate:
-      ddl-auto: validate
     show-sql: true
-    properties:
-      hibernate:
-        jdbc:
-          batch_size: 50
-        order_inserts: true
-        order_updates: true
 
   # RabbitMQ Configuration
   rabbitmq:
@@ -46,9 +116,6 @@ spring:
     port: 5672
     username: guest
     password: guest
-    # Surface unroutable (mandatory) publishes back to the Server so receipts for an offline
-    # sender can be retained for /inbox pull; routable receipts (online sender) are not stored.
-    publisher-returns: true
 rest:
   cors:
     allowedOriginPatterns: "https://localhost, https://4t4074x4-4200.euw.devtunnels.ms"
@@ -71,12 +138,6 @@ inbox:
   hold-window-seconds: 30
   # How often the sweeper scans the hot tier for expired (unconfirmed) messages.
   flush-interval-ms: 5000
-# Web Push (VAPID) — wakes an offline recipient. push is disabled (no-op) when the key pair is absent.
 push:
-  vapid:
-    public-key: ${PUSH_VAPID_PUBLIC_KEY:}
-    private-key: ${PUSH_VAPID_PRIVATE_KEY:}
-    # Contact URI required by the Web Push spec (mailto: or https:).
-    subject: ${PUSH_VAPID_SUBJECT:mailto:olshanskyev@gmail.com}
   # At most one push per recipient within this window; further triggers are collapsed.
   debounce-seconds: 15

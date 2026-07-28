@@ -1,0 +1,87 @@
+name: Build Backend Images [DEV]
+
+on:
+  push:
+    branches: [ dev ]
+    paths:
+      - 'common/**'
+      - 'server/**'
+      - 'hub/**'
+      - 'pom.xml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # Detect which modules changed so we only build the images that need rebuilding.
+  # A change in common (or the parent pom) rebuilds both, since both depend on it.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+      hub: ${{ steps.filter.outputs.hub }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            server:
+              - 'common/**'
+              - 'server/**'
+              - 'pom.xml'
+            hub:
+              - 'common/**'
+              - 'hub/**'
+              - 'pom.xml'
+
+  build:
+    needs: changes
+    if: ${{ needs.changes.outputs.server == 'true' || needs.changes.outputs.hub == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - module: server
+            build: ${{ needs.changes.outputs.server }}
+          - module: hub
+            build: ${{ needs.changes.outputs.hub }}
+    steps:
+      - name: Checkout repository
+        if: ${{ matrix.build == 'true' }}
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        if: ${{ matrix.build == 'true' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      # -am builds the required common module; the fat jar lands in <module>/target/<module>.jar.
+      - name: Package ${{ matrix.module }}
+        if: ${{ matrix.build == 'true' }}
+        run: mvn -B -pl ${{ matrix.module }} -am package
+
+      - name: Login to GitHub Container Registry
+        if: ${{ matrix.build == 'true' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.module }} image
+        if: ${{ matrix.build == 'true' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.module }}
+          file: ${{ matrix.module }}/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/fourletters-${{ matrix.module }}:dev-latest
+            ghcr.io/${{ github.repository_owner }}/fourletters-${{ matrix.module }}:${{ github.sha }}

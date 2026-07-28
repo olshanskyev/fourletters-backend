@@ -7,13 +7,42 @@ server:
   ssl:
     enabled: false
 
+# Shared configuration applied to every profile; the profile documents below only override
+# the values that actually differ between environments.
+spring:
+  application:
+    name: fourletters-hub
+
+---
+spring:
+  config:
+    activate:
+      on-profile: default
+
+  # RabbitMQ Configuration — the Hub connects with its own scoped user (bind + consume only).
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_HUB_USER}
+    password: ${RABBITMQ_HUB_PASSWORD}
+    virtual-host: ${RABBITMQ_VHOST:/}
+rest:
+  cors:
+    allowedOriginPatterns: ${ALLOWED_ORIGIN_PATTERNS}
+  jwt:
+    issuer: ${JWT_ISSUER:fourletters}
+    publicKeyUrl: ${JWT_PUBLIC_KEY_URL}
+# Hub registration: on boot the Hub authenticates to the Server with this bearer token.
+hub:
+  registration:
+    url: ${HUB_REGISTRATION_URL}
+    token: ${HUB_REGISTRATION_TOKEN}
+
 ---
 spring:
   config:
     activate:
       on-profile: local
-  application:
-    name: fourletters-hub
 
   # RabbitMQ Configuration
   rabbitmq:
