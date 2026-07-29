@@ -292,11 +292,11 @@ public class PushNotificationService {
         if (groupId != null) {
             data.put("groupId", groupId.toString());
         }
-        // ngsw click handling.
+        // Only bring the app to the foreground; the in-app SwPush.notificationClicks handler
+        // resolves senderId/groupId to the recipient's local conversation and routes there.
         ObjectNode onActionClick = data.putObject("onActionClick");
         ObjectNode defaultAction = onActionClick.putObject("default");
         defaultAction.put("operation", "focusLastFocusedOrOpen");
-        defaultAction.put("url", "/m");
 
         return root.toString();
     }
