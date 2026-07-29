@@ -92,10 +92,19 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
             // Wrap so concurrent writes (RabbitMQ relay thread + heartbeat thread) are serialized safely.
             WebSocketSession concurrentSession =
                     new ConcurrentWebSocketSessionDecorator(session, SEND_TIME_LIMIT_MS, SEND_BUFFER_LIMIT_BYTES);
-            sessions.put(userId, concurrentSession);
+            // Enforce a single live session per user. A client that reconnects (mobile wake races,
+            // dropped-but-not-closed sockets) can briefly open a second socket
+            WebSocketSession previous = sessions.put(userId, concurrentSession);
             lastPongTimes.put(session.getId(), System.currentTimeMillis());
             rabbitMqService.bindUserToHubQueue(userId);
             logger.info("Session connected and bound for user: {}", userId);
+            if (previous != null && previous.isOpen()) {
+                try {
+                    previous.close(CloseStatus.NORMAL);
+                } catch (Exception e) {
+                    logger.debug("Failed to close superseded session for user {}", userId, e);
+                }
+            }
         }
     }
 
@@ -103,17 +112,21 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
     public void afterConnectionClosed(@NonNull WebSocketSession session, @NonNull CloseStatus status) throws Exception {
         if (session.getPrincipal() != null) {
             String userId = session.getPrincipal().getName();
+            lastPongTimes.remove(session.getId());
             WebSocketSession stored = sessions.get(userId);
+            // Only unbind when the session that closed is the user's current one. A superseded
+            // (older) session closing must NOT unbind the queue the live newer session relies on.
             if (stored != null && stored.getId().equals(session.getId())) {
                 sessions.remove(userId, stored);
+                try {
+                    rabbitMqService.unbindUserFromHubQueue(userId);
+                } catch (AmqpApplicationContextClosedException e) {
+                    logger.debug("Application context is closed. Skipping unbind for user: {}", userId);
+                }
+                logger.info("Session closed and unbound for user: {}", userId);
+            } else {
+                logger.debug("Superseded session closed for user: {}", userId);
             }
-            lastPongTimes.remove(session.getId());
-            try {
-                rabbitMqService.unbindUserFromHubQueue(userId);
-            } catch (AmqpApplicationContextClosedException e) {
-                logger.debug("Application context is closed. Skipping unbind for user: {}", userId);
-            }
-            logger.info("Session closed and unbound for user: {}", userId);
         }
         super.afterConnectionClosed(session, status);
     }
