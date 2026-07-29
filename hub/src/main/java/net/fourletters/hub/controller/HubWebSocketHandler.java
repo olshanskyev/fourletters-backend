@@ -92,19 +92,12 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
             // Wrap so concurrent writes (RabbitMQ relay thread + heartbeat thread) are serialized safely.
             WebSocketSession concurrentSession =
                     new ConcurrentWebSocketSessionDecorator(session, SEND_TIME_LIMIT_MS, SEND_BUFFER_LIMIT_BYTES);
-            // Enforce a single live session per user. A client that reconnects (mobile wake races,
-            // dropped-but-not-closed sockets) can briefly open a second socket
-            WebSocketSession previous = sessions.put(userId, concurrentSession);
+            // Last-wins: the relay always targets the newest session, so a briefly-overlapping older
+            // socket (mobile wake races) simply receives nothing and is evicted by the heartbeat.
+            sessions.put(userId, concurrentSession);
             lastPongTimes.put(session.getId(), System.currentTimeMillis());
             rabbitMqService.bindUserToHubQueue(userId);
             logger.info("Session connected and bound for user: {}", userId);
-            if (previous != null && previous.isOpen()) {
-                try {
-                    previous.close(CloseStatus.NORMAL);
-                } catch (Exception e) {
-                    logger.debug("Failed to close superseded session for user {}", userId, e);
-                }
-            }
         }
     }
 
@@ -114,8 +107,8 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
             String userId = session.getPrincipal().getName();
             lastPongTimes.remove(session.getId());
             WebSocketSession stored = sessions.get(userId);
-            // Only unbind when the session that closed is the user's current one. A superseded
-            // (older) session closing must NOT unbind the queue the live newer session relies on.
+            // Only unbind when the session that closed is the user's current one. If a newer socket
+            // has already replaced it in the map, this is a stale one closing - leave the binding.
             if (stored != null && stored.getId().equals(session.getId())) {
                 sessions.remove(userId, stored);
                 try {
@@ -125,7 +118,7 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
                 }
                 logger.info("Session closed and unbound for user: {}", userId);
             } else {
-                logger.debug("Superseded session closed for user: {}", userId);
+                logger.debug("Stale session closed for user: {}", userId);
             }
         }
         super.afterConnectionClosed(session, status);

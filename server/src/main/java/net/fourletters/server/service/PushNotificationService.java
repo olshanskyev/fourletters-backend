@@ -292,10 +292,10 @@ public class PushNotificationService {
         if (groupId != null) {
             data.put("groupId", groupId.toString());
         }
-        // ngsw click handling: focus/open the app; the client then routes to the conversation.
+        // ngsw click handling.
         ObjectNode onActionClick = data.putObject("onActionClick");
         ObjectNode defaultAction = onActionClick.putObject("default");
-        defaultAction.put("operation", "openWindow");
+        defaultAction.put("operation", "focusLastFocusedOrOpen");
         defaultAction.put("url", "/m");
 
         return root.toString();
