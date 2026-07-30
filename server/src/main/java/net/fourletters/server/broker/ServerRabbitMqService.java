@@ -140,7 +140,8 @@ public class ServerRabbitMqService {
             EncryptedMessage message = event.getData();
             UUID recipientId = UUID.fromString(
                     returned.getRoutingKey().substring(RabbitMqTopology.ROUTING_KEY_PREFIX.length()));
-            pushNotificationService.notifyRecipient(recipientId, message.getSenderId(), message.getGroupId());
+            pushNotificationService.notifyRecipient(
+                    recipientId, message.getSenderId(), message.getGroupId(), message.getMessageId(), false);
             logger.debug("Recipient {} offline; triggered push for message {}",
                     recipientId, message.getMessageId());
         } catch (Exception e) {

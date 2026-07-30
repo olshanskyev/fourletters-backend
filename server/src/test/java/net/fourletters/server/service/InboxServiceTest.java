@@ -42,6 +42,9 @@ class InboxServiceTest {
     @Mock
     private GroupService groupService;
 
+    @Mock
+    private PushNotificationService pushNotificationService;
+
     private InboxService service;
 
     private final UUID sender = UUID.randomUUID();
@@ -53,7 +56,7 @@ class InboxServiceTest {
                 .thenReturn(Collections.emptyList());
         // hold window of 0s so flushExpired() treats accepted messages as already expired.
         service = new InboxService(rabbitMqService, repository, pendingRepository,
-                groupService, new PendingReceipts(), 0L);
+                groupService, new PendingReceipts(), pushNotificationService, 0L);
     }
 
     private EncryptedMessage newMessage() {
@@ -100,6 +103,11 @@ class InboxServiceTest {
         ArgumentCaptor<InboxPending> pendingCaptor = ArgumentCaptor.forClass(InboxPending.class);
         verify(pendingRepository).save(pendingCaptor.capture());
         assertThat(pendingCaptor.getValue().getRecipientId()).isEqualTo(recipient);
+
+        // A message that reached the cold tier went unacknowledged for the whole hold window, so the
+        // recipient is woken with a best-effort push (backstop for a silently-dropped Hub binding).
+        verify(pushNotificationService)
+                .notifyRecipient(eq(recipient), eq(sender), any(), eq(m.getMessageId()), eq(true));
 
         // After eviction the hot tier no longer returns it (only the cold tier would).
         InboxResponse response = service.getInbox(recipient);

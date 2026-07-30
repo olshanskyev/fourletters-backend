@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.security.Security;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -65,6 +66,14 @@ public class PushNotificationService {
 
     /** Last-sent epoch millis per recipient, used to collapse bursts. */
     private final ConcurrentHashMap<UUID, Long> lastPushAt = new ConcurrentHashMap<>();
+
+    /**
+     * Keys {@code messageId:recipientId} that have already been pushed. A message can be a push
+     * candidate twice — once when its live publish is returned unroutable (recipient offline), and
+     * again when it later reaches the cold tier (flush-time backstop) — so this set collapses them
+     * into one push. It is self-cleaning: the cold-tier call removes the key.
+     */
+    private final Set<String> pushedMessages = ConcurrentHashMap.newKeySet();
 
     /**
      * Single-threaded executor for the cheap CPU/DB work: subscription lookup, payload build
@@ -178,20 +187,47 @@ public class PushNotificationService {
 
     /**
      * Wake an offline recipient with a metadata-only push. No-op when push is disabled, the
-     * recipient has no subscription, or a push was already sent within the debounce window.
+     * recipient has no subscription, a push for this same message was already sent, or a push was
+     * already sent to this recipient within the debounce window.
      *
      * @param recipientId the offline user to wake
      * @param senderId    the message sender (for the notification title/avatar and click routing)
      * @param groupId     the group id for a group message, or {@code null} for a 1:1 message
+     * @param messageId   the message being notified, used to dedup the accept-time push and the
+     *                    flush-time backstop for the same message; may be {@code null}
+     * @param coldTier    {@code true} when called from the cold-tier flush backstop (the message is
+     *                    leaving the hot tier), {@code false} for the accept-time live-return path
      */
-    public void notifyRecipient(UUID recipientId, UUID senderId, UUID groupId) {
+    public void notifyRecipient(UUID recipientId, UUID senderId, UUID groupId, UUID messageId,
+                                boolean coldTier) {
         if (pushService == null || recipientId == null) {
+            return;
+        }
+        // Never push the same message to the same recipient twice: the live-return path and the
+        // cold-tier backstop can both fire for one message, and this set collapses them into one.
+        String key = messageId == null ? null : messageId + ":" + recipientId;
+        boolean alreadyPushed = key != null && !pushedMessages.add(key);
+        if (coldTier && key != null) {
+            // Flush is terminal: the copy is leaving the hot tier, so this was its last chance to
+            // be pushed. Forget the marker (the other exit — a receipt — clears it via clearPushed).
+            pushedMessages.remove(key);
+        }
+        if (alreadyPushed) {
             return;
         }
         if (!passesDebounce(recipientId)) {
             return;
         }
         sender.execute(() -> send(recipientId, senderId, groupId));
+    }
+
+    /**
+     * Forget the per-message push marker when a message leaves the hot tier via a receipt
+     */
+    public void clearPushed(UUID messageId, UUID recipientId) {
+        if (messageId != null && recipientId != null) {
+            pushedMessages.remove(messageId + ":" + recipientId);
+        }
     }
 
     /** Returns true at most once per debounce window for a given recipient. */

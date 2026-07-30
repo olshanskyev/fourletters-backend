@@ -38,6 +38,7 @@ public class InboxService {
     private final InboxMessageRepository inboxRepository;
     private final InboxPendingRepository inboxPendingRepository;
     private final GroupService groupService;
+    private final PushNotificationService pushNotificationService;
 
     /** Hold window length */
     private final Duration holdWindow;
@@ -62,19 +63,40 @@ public class InboxService {
                         InboxPendingRepository inboxPendingRepository,
                         GroupService groupService,
                         PendingReceipts pendingReceipts,
+                        PushNotificationService pushNotificationService,
                         @Value("${inbox.hold-window-seconds:30}") long holdWindowSeconds) {
         this.rabbitMqService = rabbitMqService;
         this.inboxRepository = inboxRepository;
         this.inboxPendingRepository = inboxPendingRepository;
         this.groupService = groupService;
         this.pendingReceipts = pendingReceipts;
+        this.pushNotificationService = pushNotificationService;
         this.holdWindow = Duration.ofSeconds(holdWindowSeconds);
         this.coldSink = (message, pending) -> {
             inboxRepository.save(InboxMessage.from(message));
             for (UUID recipientId : pending) {
                 inboxPendingRepository.save(new InboxPending(message.getMessageId(), recipientId));
             }
+            // Backstop wake-up: a message reaching the cold tier went unacknowledged for the whole
+            // hold window, so each still-pending recipient is offline or was on a Hub binding that
+            // silently died
+            notifyPending(message, pending);
         };
+    }
+
+    /**
+     * Fire a best-effort push wake-up to every recipient still owed a flushed message. Guarded so a
+     * push failure can never disrupt the surrounding persist-then-evict flush.
+     */
+    private void notifyPending(EncryptedMessage message, Set<UUID> pending) {
+        try {
+            for (UUID recipientId : pending) {
+                pushNotificationService.notifyRecipient(
+                        recipientId, message.getSenderId(), message.getGroupId(), message.getMessageId(), true);
+            }
+        } catch (RuntimeException e) {
+            logger.warn("Failed to fire cold-tier push backstop for message {}", message.getMessageId(), e);
+        }
     }
 
     /**
@@ -203,6 +225,9 @@ public class InboxService {
 
         // Any receipt means the recipient has the message; drop the retained copy once.
         UUID storedSenderId = dropRetainedCopy(messageId, recipientId);
+
+        // The message left the hot tier via a receipt, forget any push marker for it.
+        pushNotificationService.clearPushed(messageId, recipientId);
 
         // Relay to the original sender. Prefer the sender carried in the receipt (so a later
         // receipt relays even though the copy is gone); fall back to the stored sender for the
