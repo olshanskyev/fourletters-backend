@@ -45,6 +45,11 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
     /** Close a session if no pong has been received within this window. */
     private static final long PONG_TIMEOUT_MS = 70_000;
 
+    /** Application-level liveness probe: a resumed client sends this and expects {@link #PONG_FRAME}. */
+    private static final String PING_FRAME = "{\"type\":\"ping\"}";
+    /** Reply to {@link #PING_FRAME}, so a client can tell a live socket from a silently-dropped one. */
+    private static final String PONG_FRAME = "{\"type\":\"pong\"}";
+
     private final HubRabbitMqService rabbitMqService;
     private final SimpleMessageListenerContainer container;
 
@@ -125,11 +130,32 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
     }
 
     /**
-     * The Hub is receive-only. Inbound WebSocket frames are ignored.
+     * The Hub is receive-only except for one lightweight application-level liveness probe: a client
+     * that just resumed sends {@link #PING_FRAME} and we echo {@link #PONG_FRAME}
      */
     @Override
     protected void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) {
-        logger.debug("Ignoring inbound WS frame; Hub is receive-only");
+        if (!PING_FRAME.equals(message.getPayload().trim())) {
+            logger.debug("Ignoring inbound WS frame; Hub is receive-only");
+            return;
+        }
+        replyPong(session);
+    }
+
+    /** Echo a pong on the concurrency-safe session (or the raw one if it is not the current binding). */
+    private void replyPong(WebSocketSession session) {
+        WebSocketSession target = session;
+        if (session.getPrincipal() != null) {
+            WebSocketSession stored = sessions.get(session.getPrincipal().getName());
+            if (stored != null && stored.getId().equals(session.getId())) {
+                target = stored;
+            }
+        }
+        try {
+            target.sendMessage(new TextMessage(PONG_FRAME));
+        } catch (Exception e) {
+            logger.debug("Failed to reply pong for session {}", session.getId(), e);
+        }
     }
 
     // --- Heartbeat (server-initiated ping / pong) --------------------------------
