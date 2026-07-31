@@ -332,7 +332,14 @@ public class PushNotificationService {
         // resolves senderId/groupId to the recipient's local conversation and routes there.
         ObjectNode onActionClick = data.putObject("onActionClick");
         ObjectNode defaultAction = onActionClick.putObject("default");
-        defaultAction.put("operation", "focusLastFocusedOrOpen");
+        if (groupId != null || senderId != null) {
+            String kind  = groupId != null ? "group" : "sender";
+            String refId = groupId != null ? groupId.toString() : senderId.toString();
+            defaultAction.put("operation", "navigateLastFocusedOrOpen");
+            defaultAction.put("url", "/m/notify/" + kind + "/" + refId);
+        } else {
+            defaultAction.put("operation", "focusLastFocusedOrOpen");
+        }
 
         return root.toString();
     }
