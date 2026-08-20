@@ -4,6 +4,9 @@ target/
 !**/src/test/**/target/
 .kotlin
 
+### open telemetry logs ###
+logs/
+
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml

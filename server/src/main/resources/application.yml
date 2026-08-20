@@ -38,6 +38,13 @@ push:
     private-key: ${PUSH_VAPID_PRIVATE_KEY:}
     # Contact URI required by the Web Push spec (mailto: or https:).
     subject: ${PUSH_VAPID_SUBJECT:mailto:olshanskyev@gmail.com}
+# Client telemetry — appends redacted OpenTelemetry LogRecords from the PWA to a JSON-lines file.
+telemetry:
+  enabled: ${TELEMETRY_ENABLED:true}
+  # Relative default is IDE-friendly; Docker overrides this to a mounted volume path.
+  log-file: ${TELEMETRY_LOG_FILE:./logs/client-telemetry.jsonl}
+  max-batch: ${TELEMETRY_MAX_BATCH:500}
+  rate-per-min: ${TELEMETRY_RATE_PER_MIN:600}
 
 ---
 spring:
