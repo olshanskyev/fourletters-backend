@@ -197,6 +197,27 @@ class InboxServiceTest {
         // The dropped copy is gone from the inbox afterward.
         assertThat(service.getInbox(recipient).getMessages()).isEmpty();
     }
+
+    @Test
+    void receiptIsRetainedForSenderInboxPullEvenWhenRelayedLive() {
+        EncryptedMessage m = newMessage();
+        AcceptedResponse accepted = service.accept(m, sender);
+
+        DeliveryReceipt receipt = new DeliveryReceipt();
+        receipt.setMessageId(accepted.getMessageId());
+        receipt.setOriginalSenderId(sender);
+        receipt.setType(ReceiptType.DELIVERED);
+        receipt.setSignature("sig");
+        service.recordReceipt(recipient, receipt);
+
+        // Always retained (in addition to the live relay), so a zombie sender binding still recovers
+        // the ack on the sender's next /inbox pull.
+        verify(rabbitMqService).publishReceipt(eq(sender), any());
+        InboxResponse senderInbox = service.getInbox(sender);
+        assertThat(senderInbox.getReceipts()).hasSize(1);
+        assertThat(senderInbox.getReceipts().get(0).getMessageId()).isEqualTo(m.getMessageId());
+        assertThat(senderInbox.getReceipts().get(0).getType()).isEqualTo(ReceiptType.DELIVERED);
+    }
 }
 
 

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.fourletters.broker.RabbitMqTopology;
 import net.fourletters.dto.*;
-import net.fourletters.server.service.PendingReceipts;
 import net.fourletters.server.service.PushNotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,18 +34,15 @@ public class ServerRabbitMqService {
     private final AmqpAdmin amqpAdmin;
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
-    private final PendingReceipts pendingReceipts;
     private final PushNotificationService pushNotificationService;
 
     public ServerRabbitMqService(AmqpAdmin amqpAdmin,
                                  RabbitTemplate rabbitTemplate,
                                  ObjectMapper objectMapper,
-                                 PendingReceipts pendingReceipts,
                                  PushNotificationService pushNotificationService) {
         this.amqpAdmin = amqpAdmin;
         this.rabbitTemplate = rabbitTemplate;
         this.objectMapper = objectMapper;
-        this.pendingReceipts = pendingReceipts;
         this.pushNotificationService = pushNotificationService;
 
         // The Server owns and declares the single live fan-out exchange at boot.
@@ -102,35 +98,16 @@ public class ServerRabbitMqService {
     }
 
     /**
-     * An unroutable publish is returned here. A returned <b>receipt</b> (sender offline) is retained
-     * in {@link PendingReceipts} for the sender's next {@code GET /inbox}; a returned <b>message</b>
-     * (recipient has no live Hub binding = offline) triggers a best-effort push wake-up.
+     * An unroutable publish is returned here: a returned <b>message</b> (recipient has no live Hub
+     * binding = offline) triggers a best-effort push wake-up. Receipts are retained in
+     * PendingReceipts and pulled via {@code GET /inbox}, so a returned receipt needs no action.
      */
     private void onMessageReturned(ReturnedMessage returned) {
         Object receiptHeader = returned.getMessage().getMessageProperties().getHeaders().get(RECEIPT_HEADER);
         if (receiptHeader != null) {
-            retainReturnedReceipt(returned);
-        } else {
-            pushForReturnedMessage(returned);
+            return;
         }
-    }
-
-    /** Retain a receipt whose target sender is offline, for pull via {@code GET /inbox}. */
-    private void retainReturnedReceipt(ReturnedMessage returned) {
-        try {
-            ReceiptEvent event = objectMapper.readValue(returned.getMessage().getBody(), ReceiptEvent.class);
-            ReceiptData data = event.getData();
-            UUID senderId = UUID.fromString(
-                    returned.getRoutingKey().substring(RabbitMqTopology.ROUTING_KEY_PREFIX.length()));
-            ReceiptType type = event.getEvent() == ReceiptEvent.EventEnum.MESSAGE_READ
-                    ? ReceiptType.READ
-                    : ReceiptType.DELIVERED;
-            pendingReceipts.record(senderId, data.getMessageId(), data.getRecipientId(), type, data.getSignature());
-            logger.debug("Sender {} offline; retained {} receipt for message {}",
-                    senderId, type, data.getMessageId());
-        } catch (Exception e) {
-            logger.warn("Failed to retain returned receipt (routingKey={})", returned.getRoutingKey(), e);
-        }
+        pushForReturnedMessage(returned);
     }
 
     /** Wake an offline recipient whose live message could not be routed to any Hub. */

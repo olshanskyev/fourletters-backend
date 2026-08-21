@@ -237,9 +237,7 @@ public class InboxService {
             logger.debug("Ignoring receipt for message {} from {} (no relay target)", messageId, recipientId);
             return;
         }
-        // Relay live. If the sender is offline the publish comes back unroutable and the broker
-        // service retains it in PendingReceipts for the sender to pull via /inbox; an online
-        // sender gets it live and nothing is stored.
+        // Retain the ack (for pull via /inbox) and publish it live as a best-effort fast path.
         relayReceipt(recipientId, messageId, target, receipt.getType(), receipt.getSignature());
     }
 
@@ -301,6 +299,11 @@ public class InboxService {
 
 
     private void relayReceipt(UUID recipientId, UUID messageId, UUID senderId, ReceiptType type, String signature) {
+        // Retain the ack for pull via /inbox; this is what lets it survive a "zombie" sender
+        // binding (a live publish routed to a silently-dropped connection). The sender applies it
+        // idempotently, live and/or on its next /inbox.
+        pendingReceipts.record(senderId, messageId, recipientId, type, signature);
+
         ReceiptData data = new ReceiptData();
         data.setMessageId(messageId);
         data.setRecipientId(recipientId);
@@ -312,7 +315,8 @@ public class InboxService {
         event.setData(data);
 
         rabbitMqService.publishReceipt(senderId, event);
-        logger.debug("Dropped message {} on {} receipt; relayed to sender {}", messageId, type, senderId);
+        logger.debug("Relayed {} receipt for message {} to sender {} (retained for /inbox)",
+                type, messageId, senderId);
     }
 
     /**
