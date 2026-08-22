@@ -189,8 +189,9 @@ public class AuthService {
             }
         }
 
-        // clear old token from DB
+        // clear old token from DB; flush so the delete runs before re-inserting the same session id
         refreshTokenRepository.delete(stored);
+        refreshTokenRepository.flush();
 
         // generate tokens, keeping the session id stable across refreshes
         TokenPair tokenPair = generateTokensForUser(user, stored.getSessionId());
