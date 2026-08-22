@@ -63,7 +63,11 @@ public class AuthService {
     private record TokenPair(JwtTokenCreator.TokenDetails accessToken, JwtTokenCreator.TokenDetails refreshToken, String sessionId) {}
 
     private TokenPair generateTokensForUser(User user) {
-        String sessionId = UUID.randomUUID().toString();
+        return generateTokensForUser(user, UUID.randomUUID().toString());
+    }
+
+    // Refresh reuses the session id so it stays stable for the session's lifetime.
+    private TokenPair generateTokensForUser(User user, String sessionId) {
         JwtTokenCreator.TokenDetails accessTokenObj = jwtTokenCreator.generateAccessToken(user.getId().toString(), user.getRoles(), sessionId);
         JwtTokenCreator.TokenDetails refreshTokenObj = jwtTokenCreator.generateRefreshToken(user.getId().toString(), sessionId);
         return new TokenPair(accessTokenObj, refreshTokenObj, sessionId);
@@ -188,8 +192,8 @@ public class AuthService {
         // clear old token from DB
         refreshTokenRepository.delete(stored);
 
-        // generate tokens
-        TokenPair tokenPair = generateTokensForUser(user);
+        // generate tokens, keeping the session id stable across refreshes
+        TokenPair tokenPair = generateTokensForUser(user, stored.getSessionId());
         JwtTokenCreator.TokenDetails accessTokenObj = tokenPair.accessToken();
         JwtTokenCreator.TokenDetails refreshTokenObj = tokenPair.refreshToken();
 
