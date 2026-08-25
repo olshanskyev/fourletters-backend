@@ -19,6 +19,15 @@ public final class RabbitMqTopology {
     /** Name prefix for the auto-delete queue the Server provisions per Hub. */
     public static final String HUB_QUEUE_PREFIX = "hub.queue.";
 
+    /** Topic exchange carrying live presence/typing metadata between Hubs (declared in definitions.json). */
+    public static final String PRESENCE_EXCHANGE = "presence.exchange";
+
+    /** Routing-key prefix an owner Hub binds/publishes as a user's online marker: {@code presence.{userId}}. */
+    public static final String PRESENCE_KEY_PREFIX = "presence.";
+
+    /** Routing-key prefix a watcher Hub binds and events are published to: {@code watch.{userId}}. */
+    public static final String WATCH_KEY_PREFIX = "watch.";
+
     private RabbitMqTopology() {
     }
 }

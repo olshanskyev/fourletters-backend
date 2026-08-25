@@ -26,6 +26,8 @@ spring:
     username: ${RABBITMQ_HUB_USER}
     password: ${RABBITMQ_HUB_PASSWORD}
     virtual-host: ${RABBITMQ_VHOST:/}
+    # Presence probes rely on the mandatory-return of an unroutable publish to detect "offline".
+    publisher-returns: true
 rest:
   cors:
     allowedOriginPatterns: ${ALLOWED_ORIGIN_PATTERNS}
@@ -50,6 +52,7 @@ spring:
     port: 5672
     username: guest
     password: guest
+    publisher-returns: true
 rest:
   cors:
     allowedOriginPatterns: "https://localhost, https://4t4074x4-4200.euw.devtunnels.ms"
@@ -61,3 +64,6 @@ hub:
   registration:
     url: "https://4t4074x4-8080.euw.devtunnels.ms/server/api/v1/hubs/register"
     token: "dev-hub-registration-secret"
+logging:
+  level:
+    net.fourletters.hub: DEBUG

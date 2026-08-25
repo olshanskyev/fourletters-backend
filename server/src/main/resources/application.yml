@@ -156,3 +156,6 @@ inbox:
 push:
   # At most one push per recipient within this window; further triggers are collapsed.
   debounce-seconds: 15
+logging:
+  level:
+    net.fourletters.server: DEBUG

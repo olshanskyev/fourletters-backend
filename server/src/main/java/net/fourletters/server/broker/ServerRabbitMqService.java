@@ -13,7 +13,6 @@ import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.ReturnedMessage;
-import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
@@ -44,9 +43,6 @@ public class ServerRabbitMqService {
         this.rabbitTemplate = rabbitTemplate;
         this.objectMapper = objectMapper;
         this.pushNotificationService = pushNotificationService;
-
-        // The Server owns and declares the single live fan-out exchange at boot.
-        amqpAdmin.declareExchange(new TopicExchange(RabbitMqTopology.MESSAGES_EXCHANGE));
 
         rabbitTemplate.setMandatory(true);
         rabbitTemplate.setReturnsCallback(this::onMessageReturned);

@@ -1,6 +1,8 @@
 package net.fourletters.hub.controller;
 
 import net.fourletters.hub.broker.HubRabbitMqService;
+import net.fourletters.hub.presence.PresenceService;
+import net.fourletters.hub.session.HubSessionRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,7 +52,10 @@ class HubWebSocketHandlerTest {
 
     @BeforeEach
     void setUp() {
-        handler = new HubWebSocketHandler(rabbitMqService, connectionFactory);
+        // Real registry + presence over the mocked broker, so relay/session behaviour is exercised.
+        HubSessionRegistry registry = new HubSessionRegistry();
+        PresenceService presence = new PresenceService(rabbitMqService, registry);
+        handler = new HubWebSocketHandler(rabbitMqService, registry, presence, connectionFactory);
 
         lenient().when(session.getPrincipal()).thenReturn(principal);
         lenient().when(principal.getName()).thenReturn(userId);
@@ -81,7 +86,7 @@ class HubWebSocketHandlerTest {
     void testInboundFramesAreIgnored() throws Exception {
         handler.afterConnectionEstablished(session);
 
-        // Hub is receive-only: an inbound client frame must never be published or echoed.
+        // An unknown inbound client frame (no recognised "type") must never be echoed or acted on.
         handler.handleTextMessage(session, new TextMessage("{\"anything\":true}"));
 
         verify(session, never()).sendMessage(any());
