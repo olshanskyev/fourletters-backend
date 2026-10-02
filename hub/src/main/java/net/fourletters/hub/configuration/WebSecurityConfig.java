@@ -10,6 +10,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+import org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean;
 
 import net.fourletters.configuration.CommonSecurityConfigurator;
 
@@ -18,6 +19,9 @@ import net.fourletters.configuration.CommonSecurityConfigurator;
 @EnableMethodSecurity
 @EnableWebSocket
 public class WebSecurityConfig implements WebSocketConfigurer {
+
+    /** Cap on every client -> Hub frame; sized for the largest one, a 64 KiB call_signal (container default 8 KiB). */
+    private static final int MAX_INBOUND_FRAME_BYTES = 72 * 1024;
 
     private final CommonSecurityConfigurator commonSecConfigurator;
     private final HubWebSocketHandler hubWebSocketHandler;
@@ -42,5 +46,12 @@ public class WebSecurityConfig implements WebSocketConfigurer {
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(hubWebSocketHandler, "/ws")
                 .setAllowedOriginPatterns("*"); // Spring WebSocket does its own Origin check; we bypass it here and rely on CommonSecurityConfigurator
+    }
+
+    @Bean
+    public ServletServerContainerFactoryBean webSocketContainer() {
+        ServletServerContainerFactoryBean container = new ServletServerContainerFactoryBean();
+        container.setMaxTextMessageBufferSize(MAX_INBOUND_FRAME_BYTES);
+        return container;
     }
 }

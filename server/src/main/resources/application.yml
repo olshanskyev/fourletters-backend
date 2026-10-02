@@ -97,11 +97,15 @@ hub:
 inbox:
   # Seconds a message is held in memory awaiting a receipt before it is flushed to PostgreSQL.
   hold-window-seconds: ${INBOX_HOLD_WINDOW_SECONDS:30}
-  # How often the sweeper scans the hot tier for expired (unconfirmed) messages.
-  flush-interval-ms: ${INBOX_FLUSH_INTERVAL_MS:5000}
+  # How often the sweeper scans the hot tier for due push backstops and expired messages.
+  flush-interval-ms: ${INBOX_FLUSH_INTERVAL_MS:1000}
 push:
   # At most one push per recipient within this window; further triggers are collapsed.
   debounce-seconds: ${PUSH_DEBOUNCE_SECONDS:15}
+  # Push a recipient whose held message is still unacknowledged after this delay (zombie binding).
+  backstop-delay-seconds: ${PUSH_BACKSTOP_DELAY_SECONDS:10}
+  # Same for a call offer; must not exceed the hold window either.
+  call-backstop-delay-seconds: ${PUSH_CALL_BACKSTOP_DELAY_SECONDS:5}
 
 ---
 spring:
@@ -151,11 +155,15 @@ hub:
 inbox:
   # Seconds a message is held in memory awaiting a receipt before it is flushed to PostgreSQL.
   hold-window-seconds: 30
-  # How often the sweeper scans the hot tier for expired (unconfirmed) messages.
-  flush-interval-ms: 5000
+  # How often the sweeper scans the hot tier for due push backstops and expired messages.
+  flush-interval-ms: 1000
 push:
   # At most one push per recipient within this window; further triggers are collapsed.
   debounce-seconds: 15
+  # Push a recipient whose held message is still unacknowledged after this delay (zombie binding).
+  backstop-delay-seconds: 10
+  # Same for a call offer; must not exceed the hold window either.
+  call-backstop-delay-seconds: 5
 logging:
   level:
     net.fourletters.server: DEBUG

@@ -1,6 +1,7 @@
 package net.fourletters.server.service;
 
 import net.fourletters.dto.EncryptedMessage;
+import net.fourletters.dto.MessageHint;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -55,6 +56,65 @@ class HotTierStorageTest {
 
     private static Instant future() {
         return Instant.now().plusSeconds(60);
+    }
+
+    private static Instant past() {
+        return Instant.now().minusSeconds(60);
+    }
+
+    /** A backstop notifier that records each fired message id and its pending set. */
+    private static final class RecordingNotifier implements HotTierStorage.BackstopNotifier {
+        final List<UUID> fired = new ArrayList<>();
+        final List<Set<UUID>> pending = new ArrayList<>();
+
+        @Override
+        public void notify(EncryptedMessage message, Set<UUID> members) {
+            fired.add(message.getMessageId());
+            pending.add(members);
+        }
+    }
+
+    @Test
+    void fireBackstopsNotifiesStillPendingMembersOnce() {
+        EncryptedMessage m = groupMessage(UUID.randomUUID());
+        tier.store(m, Set.of(alice, bob));
+        tier.acknowledge(m.getMessageId(), alice);
+        RecordingNotifier notifier = new RecordingNotifier();
+
+        tier.fireBackstops(future(), future(), notifier);
+        tier.fireBackstops(future(), future(), notifier);
+
+        assertThat(notifier.fired).containsExactly(m.getMessageId());
+        assertThat(notifier.pending).containsExactly(Set.of(bob));
+        // Firing the backstop never evicts: the copy stays hot until receipt or flush.
+        assertThat(tier.holds(m.getMessageId())).isTrue();
+    }
+
+    @Test
+    void fireBackstopsWaitsForTheDelayOfEachHint() {
+        EncryptedMessage chat = directMessage(UUID.randomUUID());
+        EncryptedMessage offer = directMessage(UUID.randomUUID());
+        offer.setHint(MessageHint.CALL);
+        tier.store(chat, Set.of(alice));
+        tier.store(offer, Set.of(alice));
+        RecordingNotifier notifier = new RecordingNotifier();
+
+        // Chat delay not yet elapsed, call delay elapsed.
+        tier.fireBackstops(past(), future(), notifier);
+
+        assertThat(notifier.fired).containsExactly(offer.getMessageId());
+    }
+
+    @Test
+    void fireBackstopsSkipsFullyAcknowledgedMessages() {
+        EncryptedMessage m = directMessage(UUID.randomUUID());
+        tier.store(m, Set.of(alice));
+        tier.acknowledge(m.getMessageId(), alice);
+        RecordingNotifier notifier = new RecordingNotifier();
+
+        tier.fireBackstops(future(), future(), notifier);
+
+        assertThat(notifier.fired).isEmpty();
     }
 
     @Test

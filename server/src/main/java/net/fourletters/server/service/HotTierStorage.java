@@ -1,6 +1,7 @@
 package net.fourletters.server.service;
 
 import net.fourletters.dto.EncryptedMessage;
+import net.fourletters.dto.MessageHint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +15,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -32,6 +34,12 @@ class HotTierStorage {
     @FunctionalInterface
     interface ColdSink {
         void persist(EncryptedMessage message, Set<UUID> pending);
+    }
+
+    /** Push wake-up for the recipients still pending once a message's backstop delay elapsed. */
+    @FunctionalInterface
+    interface BackstopNotifier {
+        void notify(EncryptedMessage message, Set<UUID> pending);
     }
 
     /**
@@ -58,6 +66,7 @@ class HotTierStorage {
         final Set<UUID> pending;
         final Instant enqueuedAt;
         final long sequenceId;
+        final AtomicBoolean backstopFired = new AtomicBoolean();
 
         Entry(EncryptedMessage message, Set<UUID> pending, long sequenceId) {
             this.message = message;
@@ -133,6 +142,23 @@ class HotTierStorage {
     /** Expire settle tombstones older than {@code cutoff}. */
     void sweep(Instant cutoff) {
         settled.entrySet().removeIf(e -> !e.getValue().isAfter(cutoff));
+    }
+
+    /**
+     * Fire the push backstop, once per message, for every held message still owed to someone whose
+     * backstop delay elapsed: a chat message enqueued at or before {@code messageCutoff}, a call
+     * offer at or before {@code callCutoff}.
+     */
+    void fireBackstops(Instant messageCutoff, Instant callCutoff, BackstopNotifier notifier) {
+        for (Entry entry : messages.values()) {
+            Instant cutoff = entry.message.getHint() == MessageHint.CALL ? callCutoff : messageCutoff;
+            if (entry.enqueuedAt.isAfter(cutoff) || entry.pending.isEmpty()) {
+                continue;
+            }
+            if (entry.backstopFired.compareAndSet(false, true)) {
+                notifier.notify(entry.message, Set.copyOf(entry.pending));
+            }
+        }
     }
 
     /** Flush messages past {@code cutoff} via {@code sink}, then evict them. */

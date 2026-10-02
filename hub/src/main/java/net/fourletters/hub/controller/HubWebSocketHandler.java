@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import net.fourletters.broker.RabbitMqTopology;
 import net.fourletters.hub.broker.HubRabbitMqService;
+import net.fourletters.hub.call.CallSignalService;
 import net.fourletters.hub.presence.PresenceService;
 import net.fourletters.hub.session.HubSessionRegistry;
 import org.slf4j.Logger;
@@ -47,15 +48,18 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
     private final HubRabbitMqService rabbitMqService;
     private final HubSessionRegistry registry;
     private final PresenceService presence;
+    private final CallSignalService calls;
     private final SimpleMessageListenerContainer container;
 
     public HubWebSocketHandler(HubRabbitMqService rabbitMqService,
                                HubSessionRegistry registry,
                                PresenceService presence,
+                               CallSignalService calls,
                                ConnectionFactory connectionFactory) {
         this.rabbitMqService = rabbitMqService;
         this.registry = registry;
         this.presence = presence;
+        this.calls = calls;
 
         // The container is prepared but not started: the queue name is only known after
         // the Server provisions it during registration (see startConsuming).
@@ -94,6 +98,7 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
         String userId = principal.getName();
         registry.register(userId, session);
         rabbitMqService.bindUserToHubQueue(userId);
+        rabbitMqService.bindCallSignals(userId);
         presence.onUserOnline(userId);
         logger.info("Session connected and bound for user: {}", userId);
     }
@@ -115,10 +120,11 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
         super.afterConnectionClosed(session, status);
     }
 
-    /** Release everything a disconnecting user held: its relay binding and its presence state. */
+    /** Release everything a disconnecting user held: its relay bindings and its presence state. */
     private void teardown(String userId) {
         try {
             rabbitMqService.unbindUserFromHubQueue(userId);
+            rabbitMqService.unbindCallSignals(userId);
         } catch (AmqpApplicationContextClosedException e) {
             logger.debug("Application context is closed. Skipping unbind for user: {}", userId);
         }
@@ -126,8 +132,9 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
     }
 
     /**
-     * The Hub acts on a small set of inbound frames: a {@code ping} liveness probe and the presence
-     * control frames ({@code presence_subscribe} / {@code presence_unsubscribe} / {@code typing}).
+     * The Hub acts on a small set of inbound frames: a {@code ping} liveness probe, the presence
+     * control frames ({@code presence_subscribe} / {@code presence_unsubscribe} / {@code typing}),
+     * and {@code call_signal}.
      */
     @Override
     protected void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) {
@@ -152,6 +159,8 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
             case "presence_subscribe" -> presence.subscribe(userId, node.path("userId").asText(null));
             case "presence_unsubscribe" -> presence.unsubscribe(userId, node.path("userId").asText(null));
             case "typing" -> presence.typing(userId);
+            case "call_signal" -> calls.relay(
+                    userId, node.path("recipientId").asText(null), node.path("payload").asText(null));
             default -> logger.debug("Ignoring inbound WS frame type {}", type);
         }
     }
@@ -187,6 +196,10 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
             handlePresenceDelivery(message, channel);
             return;
         }
+        if (RabbitMqTopology.CALLS_EXCHANGE.equals(exchange)) {
+            handleCallDelivery(message, channel);
+            return;
+        }
         relayMessage(message, channel);
     }
 
@@ -219,6 +232,20 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
                 presence.onWatchEvent(watched, new String(message.getBody(), StandardCharsets.UTF_8));
             } else if (routingKey != null && routingKey.startsWith(RabbitMqTopology.PRESENCE_KEY_PREFIX)) {
                 presence.onProbe(routingKey.substring(RabbitMqTopology.PRESENCE_KEY_PREFIX.length()));
+            }
+        } finally {
+            channel.basicAck(deliveryTag, false);
+        }
+    }
+
+    /** Forward a {@code call.{id}} signal to that user's local session; always acked-and-dropped. */
+    private void handleCallDelivery(Message message, Channel channel) throws Exception {
+        long deliveryTag = message.getMessageProperties().getDeliveryTag();
+        String routingKey = message.getMessageProperties().getReceivedRoutingKey();
+        try {
+            if (routingKey != null && routingKey.startsWith(RabbitMqTopology.CALL_KEY_PREFIX)) {
+                calls.onDelivery(routingKey.substring(RabbitMqTopology.CALL_KEY_PREFIX.length()),
+                        new String(message.getBody(), StandardCharsets.UTF_8));
             }
         } finally {
             channel.basicAck(deliveryTag, false);

@@ -30,6 +30,9 @@ public class ServerRabbitMqService {
     /** Header that marks a publish as a receipt, so the returns callback can tell it from a message. */
     private static final String RECEIPT_HEADER = "x-fl-receipt";
 
+    /** Header carrying the sender's MessageHint, so a returned message is pushed with the right wording. */
+    private static final String HINT_HEADER = "x-fl-hint";
+
     private final AmqpAdmin amqpAdmin;
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
@@ -59,13 +62,18 @@ public class ServerRabbitMqService {
     }
 
     /**
-     * Publish an accepted message to the live fan-out bus, routed to its recipient.
+     * Publish an accepted message to the live fan-out bus, routed to its recipient. The hint travels
+     * as an AMQP header only: the Hub relays just the body, so it never reaches the recipient.
      */
-    public void publishMessage(EncryptedMessage message) {
+    public void publishMessage(EncryptedMessage message, MessageHint hint) {
         MessageEvent event = new MessageEvent();
         event.setEvent(MessageEvent.EventEnum.MESSAGE_RECEIVED);
         event.setData(message);
-        send(RabbitMqTopology.ROUTING_KEY_PREFIX + message.getRecipientId(), event, message.getMessageId(), false);
+        MessagePostProcessor markHint = hint == null ? null : amqpMessage -> {
+            amqpMessage.getMessageProperties().setHeader(HINT_HEADER, hint.getValue());
+            return amqpMessage;
+        };
+        send(RabbitMqTopology.ROUTING_KEY_PREFIX + message.getRecipientId(), event, message.getMessageId(), markHint);
     }
 
     /**
@@ -73,18 +81,18 @@ public class ServerRabbitMqService {
      * {@code mandatory}: if the sender is offline the receipt is returned and retained.
      */
     public void publishReceipt(UUID senderId, ReceiptEvent event) {
-        send(RabbitMqTopology.ROUTING_KEY_PREFIX + senderId, event, event.getData().getMessageId(), true);
+        MessagePostProcessor markReceipt = message -> {
+            message.getMessageProperties().setHeader(RECEIPT_HEADER, "1");
+            return message;
+        };
+        send(RabbitMqTopology.ROUTING_KEY_PREFIX + senderId, event, event.getData().getMessageId(), markReceipt);
     }
 
-    private void send(String routingKey, Object body, Object idForLog, boolean receipt) {
+    private void send(String routingKey, Object body, Object idForLog, MessagePostProcessor postProcessor) {
         try {
             String json = objectMapper.writeValueAsString(body);
-            if (receipt) {
-                MessagePostProcessor markReceipt = message -> {
-                    message.getMessageProperties().setHeader(RECEIPT_HEADER, "1");
-                    return message;
-                };
-                rabbitTemplate.convertAndSend(RabbitMqTopology.MESSAGES_EXCHANGE, routingKey, json, markReceipt);
+            if (postProcessor != null) {
+                rabbitTemplate.convertAndSend(RabbitMqTopology.MESSAGES_EXCHANGE, routingKey, json, postProcessor);
             } else {
                 rabbitTemplate.convertAndSend(RabbitMqTopology.MESSAGES_EXCHANGE, routingKey, json);
             }
@@ -113,8 +121,10 @@ public class ServerRabbitMqService {
             EncryptedMessage message = event.getData();
             UUID recipientId = UUID.fromString(
                     returned.getRoutingKey().substring(RabbitMqTopology.ROUTING_KEY_PREFIX.length()));
+            Object hintHeader = returned.getMessage().getMessageProperties().getHeaders().get(HINT_HEADER);
+            MessageHint hint = hintHeader == null ? null : MessageHint.fromValue(hintHeader.toString());
             pushNotificationService.notifyRecipient(
-                    recipientId, message.getSenderId(), message.getGroupId(), message.getMessageId(), false);
+                    recipientId, message.getSenderId(), message.getGroupId(), message.getMessageId(), hint);
             logger.debug("Recipient {} offline; triggered push for message {}",
                     recipientId, message.getMessageId());
         } catch (Exception e) {

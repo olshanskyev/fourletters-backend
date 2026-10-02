@@ -4,6 +4,7 @@ import net.fourletters.broker.RabbitMqTopology;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -13,10 +14,14 @@ import java.util.function.Consumer;
 
 /**
  * Hub-side RabbitMQ logic. The Hub is a receive-only blind relay for messages; for presence it also
- * manages per-user bindings on {@code presence.exchange} and publishes online/offline/typing events.
+ * manages per-user bindings on {@code presence.exchange} and publishes online/offline/typing events,
+ * and it relays ephemeral call signals over {@code calls.exchange}.
  */
 @Service
 public class HubRabbitMqService {
+
+    /** A call signal older than this is useless, so the broker discards it. */
+    private static final String CALL_SIGNAL_EXPIRATION_MS = "30000";
 
     private final AmqpAdmin amqpAdmin;
     private final RabbitTemplate rabbitTemplate;
@@ -24,6 +29,8 @@ public class HubRabbitMqService {
             new TopicExchange(RabbitMqTopology.MESSAGES_EXCHANGE);
     private final TopicExchange presenceExchange =
             new TopicExchange(RabbitMqTopology.PRESENCE_EXCHANGE);
+    private final TopicExchange callsExchange =
+            new TopicExchange(RabbitMqTopology.CALLS_EXCHANGE);
 
     private volatile String hubQueueName;
     /** Notified with a userId when a presence probe is returned unroutable, i.e. that user is offline. */
@@ -39,7 +46,8 @@ public class HubRabbitMqService {
             if (routingKey != null && routingKey.startsWith(RabbitMqTopology.PRESENCE_KEY_PREFIX)) {
                 probeReturnedHandler.accept(routingKey.substring(RabbitMqTopology.PRESENCE_KEY_PREFIX.length()));
             }
-            // A returned watch.{id} event (no watchers bound) is harmless and ignored.
+            // A returned watch.{id} event (no watchers bound) or call.{id} signal (recipient not
+            // connected) is harmless and ignored.
         });
     }
 
@@ -116,5 +124,34 @@ public class HubRabbitMqService {
     public void probePresence(String userId) {
         rabbitTemplate.convertAndSend(
                 RabbitMqTopology.PRESENCE_EXCHANGE, RabbitMqTopology.PRESENCE_KEY_PREFIX + userId, "");
+    }
+
+    // --- Call signaling (calls.exchange) -----------------------------------------
+
+    /** Receive a locally-connected user's call signals: bind {@code call.{id}} to this Hub's queue. */
+    public void bindCallSignals(String userId) {
+        amqpAdmin.declareBinding(callBinding(userId));
+    }
+
+    public void unbindCallSignals(String userId) {
+        amqpAdmin.removeBinding(callBinding(userId));
+    }
+
+    private Binding callBinding(String userId) {
+        return BindingBuilder
+                .bind(new Queue(hubQueueName))
+                .to(callsExchange)
+                .with(RabbitMqTopology.CALL_KEY_PREFIX + userId);
+    }
+
+    /** Publish a call-signal frame to the Hub holding {@code recipientId}; never persisted. */
+    public void publishCallSignal(String recipientId, String frameJson) {
+        rabbitTemplate.convertAndSend(
+                RabbitMqTopology.CALLS_EXCHANGE, RabbitMqTopology.CALL_KEY_PREFIX + recipientId, frameJson,
+                message -> {
+                    message.getMessageProperties().setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
+                    message.getMessageProperties().setExpiration(CALL_SIGNAL_EXPIRATION_MS);
+                    return message;
+                });
     }
 }

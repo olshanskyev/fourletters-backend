@@ -43,6 +43,12 @@ public class InboxService {
     /** Hold window length */
     private final Duration holdWindow;
 
+    /** How long a held chat message may go unacknowledged before its recipients are push-woken. */
+    private final Duration backstopDelay;
+
+    /** The same for a call offer, shorter so a callee on a zombie binding is woken while it rings. */
+    private final Duration callBackstopDelay;
+
     /**
      * Epoch milliseconds at which this Server process started, surfaced on responses so a
      * client can detect a restart (a changed value means the in-memory hot tier was lost).
@@ -64,7 +70,9 @@ public class InboxService {
                         GroupService groupService,
                         PendingReceipts pendingReceipts,
                         PushNotificationService pushNotificationService,
-                        @Value("${inbox.hold-window-seconds:30}") long holdWindowSeconds) {
+                        @Value("${inbox.hold-window-seconds:30}") long holdWindowSeconds,
+                        @Value("${push.backstop-delay-seconds:10}") long backstopDelaySeconds,
+                        @Value("${push.call-backstop-delay-seconds:5}") long callBackstopDelaySeconds) {
         this.rabbitMqService = rabbitMqService;
         this.inboxRepository = inboxRepository;
         this.inboxPendingRepository = inboxPendingRepository;
@@ -72,30 +80,35 @@ public class InboxService {
         this.pendingReceipts = pendingReceipts;
         this.pushNotificationService = pushNotificationService;
         this.holdWindow = Duration.ofSeconds(holdWindowSeconds);
+        this.backstopDelay = Duration.ofSeconds(backstopDelaySeconds);
+        this.callBackstopDelay = Duration.ofSeconds(callBackstopDelaySeconds);
+        // The backstop must fire while the copy is still hot; the flush itself never pushes.
+        if (backstopDelay.compareTo(holdWindow) > 0 || callBackstopDelay.compareTo(holdWindow) > 0) {
+            throw new IllegalStateException("push backstop delays must not exceed inbox.hold-window-seconds");
+        }
         this.coldSink = (message, pending) -> {
             inboxRepository.save(InboxMessage.from(message));
             for (UUID recipientId : pending) {
                 inboxPendingRepository.save(new InboxPending(message.getMessageId(), recipientId));
+                // The copy leaves the hot tier, so its push marker is no longer needed.
+                pushNotificationService.clearPushed(message.getMessageId(), recipientId);
             }
-            // Backstop wake-up: a message reaching the cold tier went unacknowledged for the whole
-            // hold window, so each still-pending recipient is offline or was on a Hub binding that
-            // silently died
-            notifyPending(message, pending);
         };
     }
 
     /**
-     * Fire a best-effort push wake-up to every recipient still owed a flushed message. Guarded so a
-     * push failure can never disrupt the surrounding persist-then-evict flush.
+     * Backstop wake-up: the held message went unacknowledged past its backstop delay, so each
+     * still-pending recipient is offline or on a Hub binding that silently died. Guarded so a push
+     * failure can never disrupt the sweeper.
      */
     private void notifyPending(EncryptedMessage message, Set<UUID> pending) {
         try {
             for (UUID recipientId : pending) {
-                pushNotificationService.notifyRecipient(
-                        recipientId, message.getSenderId(), message.getGroupId(), message.getMessageId(), true);
+                pushNotificationService.notifyRecipient(recipientId, message.getSenderId(),
+                        message.getGroupId(), message.getMessageId(), message.getHint());
             }
         } catch (RuntimeException e) {
-            logger.warn("Failed to fire cold-tier push backstop for message {}", message.getMessageId(), e);
+            logger.warn("Failed to fire push backstop for message {}", message.getMessageId(), e);
         }
     }
 
@@ -135,7 +148,8 @@ public class InboxService {
             throw new IllegalArgumentException("A 1:1 message requires a recipientId");
         }
         tier.store(message, Set.of(recipientId));
-        rabbitMqService.publishMessage(message);
+        // The hint stays on the held copy (it drives the push) but is never relayed to the recipient.
+        rabbitMqService.publishMessage(publishCopy(message, recipientId), message.getHint());
         logger.debug("Accepted message {} for recipient {}",
                 message.getMessageId(), recipientId);
     }
@@ -152,9 +166,11 @@ public class InboxService {
             return;
         }
 
+        // Calls are 1:1 only, so a group message is always pushed as a plain message.
+        message.setHint(null);
         tier.store(message, recipients);
         for (UUID recipientId : recipients) {
-            rabbitMqService.publishMessage(publishCopy(message, recipientId));
+            rabbitMqService.publishMessage(publishCopy(message, recipientId), null);
         }
         logger.debug("Accepted group message {} for {} recipients (single copy)",
                 message.getMessageId(), recipients.size());
@@ -285,13 +301,16 @@ public class InboxService {
     }
 
     /**
-     * Hold-window sweeper: flush messages older than the hold window to the durable inbox, then
-     * evict them. The tier claims before persisting (so a concurrent receipt can't also process it)
+     * Hot-tier sweeper. First fires the push backstop for messages still unacknowledged past their
+     * backstop delay, then flushes messages older than the hold window to the durable inbox and
+     * evicts them. The tier claims before persisting (so a concurrent receipt can't also process it)
      * and persists-then-evicts, so a message is never absent from both tiers.
      */
-    @Scheduled(fixedDelayString = "${inbox.flush-interval-ms:5000}")
+    @Scheduled(fixedDelayString = "${inbox.flush-interval-ms:1000}")
     void flushExpired() {
-        Instant cutoff = Instant.now().minus(holdWindow);
+        Instant now = Instant.now();
+        tier.fireBackstops(now.minus(backstopDelay), now.minus(callBackstopDelay), this::notifyPending);
+        Instant cutoff = now.minus(holdWindow);
         tier.flushExpired(cutoff, coldSink);
         // Expire 1:1 settle tombstones older than the hold window.
         tier.sweep(cutoff);

@@ -19,10 +19,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -54,9 +57,13 @@ class InboxServiceTest {
     void setUp() {
         lenient().when(repository.findPendingForRecipient(any()))
                 .thenReturn(Collections.emptyList());
-        // hold window of 0s so flushExpired() treats accepted messages as already expired.
-        service = new InboxService(rabbitMqService, repository, pendingRepository,
-                groupService, new PendingReceipts(), pushNotificationService, 0L);
+        // hold window and backstop delays of 0s so flushExpired() treats accepted messages as expired.
+        service = newService(0L, 0L, 0L);
+    }
+
+    private InboxService newService(long holdWindow, long backstopDelay, long callBackstopDelay) {
+        return new InboxService(rabbitMqService, repository, pendingRepository, groupService,
+                new PendingReceipts(), pushNotificationService, holdWindow, backstopDelay, callBackstopDelay);
     }
 
     private EncryptedMessage newMessage() {
@@ -104,10 +111,11 @@ class InboxServiceTest {
         verify(pendingRepository).save(pendingCaptor.capture());
         assertThat(pendingCaptor.getValue().getRecipientId()).isEqualTo(recipient);
 
-        // A message that reached the cold tier went unacknowledged for the whole hold window, so the
-        // recipient is woken with a best-effort push (backstop for a silently-dropped Hub binding).
+        // Unacknowledged past the backstop delay, so the recipient is woken with a best-effort push
+        // (backstop for a silently-dropped Hub binding), and the marker is released on flush.
         verify(pushNotificationService)
-                .notifyRecipient(eq(recipient), eq(sender), any(), eq(m.getMessageId()), eq(true));
+                .notifyRecipient(eq(recipient), eq(sender), any(), eq(m.getMessageId()), isNull());
+        verify(pushNotificationService).clearPushed(m.getMessageId(), recipient);
 
         // After eviction the hot tier no longer returns it (only the cold tier would).
         InboxResponse response = service.getInbox(recipient);
@@ -196,6 +204,91 @@ class InboxServiceTest {
 
         // The dropped copy is gone from the inbox afterward.
         assertThat(service.getInbox(recipient).getMessages()).isEmpty();
+    }
+
+    @Test
+    void backstopFiresBeforeFlushAndOnlyOncePerMessage() {
+        service = newService(30L, 0L, 0L);
+        EncryptedMessage m = newMessage();
+        service.accept(m, sender);
+
+        service.flushExpired();
+        service.flushExpired();
+
+        verify(pushNotificationService, times(1))
+                .notifyRecipient(eq(recipient), eq(sender), any(), eq(m.getMessageId()), isNull());
+        // Still within the hold window: nothing is written to the cold tier yet.
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void acknowledgedMessageIsNeverBackstopPushed() {
+        service = newService(30L, 0L, 0L);
+        EncryptedMessage m = newMessage();
+        service.accept(m, sender);
+        DeliveryReceipt receipt = new DeliveryReceipt();
+        receipt.setMessageId(m.getMessageId());
+        receipt.setType(ReceiptType.DELIVERED);
+        receipt.setSignature("sig");
+        service.recordReceipt(recipient, receipt);
+
+        service.flushExpired();
+
+        verify(pushNotificationService, never()).notifyRecipient(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void callOfferUsesTheShorterBackstopDelay() {
+        service = newService(30L, 30L, 0L);
+        EncryptedMessage chat = newMessage();
+        EncryptedMessage offer = newMessage();
+        offer.setHint(MessageHint.CALL);
+        service.accept(chat, sender);
+        service.accept(offer, sender);
+
+        service.flushExpired();
+
+        verify(pushNotificationService)
+                .notifyRecipient(eq(recipient), eq(sender), any(), eq(offer.getMessageId()), eq(MessageHint.CALL));
+        verify(pushNotificationService, never())
+                .notifyRecipient(any(), any(), any(), eq(chat.getMessageId()), any());
+    }
+
+    @Test
+    void callHintIsPublishedAsHeaderButNeverRelayedOrStored() {
+        EncryptedMessage offer = newMessage();
+        offer.setHint(MessageHint.CALL);
+        service.accept(offer, sender);
+
+        ArgumentCaptor<EncryptedMessage> published = ArgumentCaptor.forClass(EncryptedMessage.class);
+        verify(rabbitMqService).publishMessage(published.capture(), eq(MessageHint.CALL));
+        assertThat(published.getValue().getHint()).isNull();
+        assertThat(service.getInbox(recipient).getMessages())
+                .allSatisfy(msg -> assertThat(msg.getHint()).isNull());
+    }
+
+    @Test
+    void groupMessageIgnoresCallHint() {
+        UUID groupId = UUID.randomUUID();
+        when(groupService.groupRoster(groupId)).thenReturn(List.of(sender, recipient));
+        EncryptedMessage m = new EncryptedMessage();
+        m.setMessageId(UUID.randomUUID());
+        m.setGroupId(groupId);
+        m.setPayload("cipher");
+        m.setHint(MessageHint.CALL);
+
+        service.accept(m, sender);
+        service.flushExpired();
+
+        verify(rabbitMqService).publishMessage(any(), isNull());
+        verify(pushNotificationService)
+                .notifyRecipient(eq(recipient), eq(sender), eq(groupId), eq(m.getMessageId()), isNull());
+    }
+
+    @Test
+    void rejectsBackstopDelayLongerThanHoldWindow() {
+        assertThatThrownBy(() -> newService(30L, 31L, 5L)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> newService(30L, 10L, 31L)).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
