@@ -1,6 +1,7 @@
 package net.fourletters.hub.controller;
 
 import net.fourletters.hub.broker.HubRabbitMqService;
+import net.fourletters.hub.call.CallSignalService;
 import net.fourletters.hub.presence.PresenceService;
 import net.fourletters.hub.session.HubSessionRegistry;
 import org.junit.jupiter.api.AfterEach;
@@ -23,6 +24,8 @@ import java.util.UUID;
 
 import com.rabbitmq.client.Channel;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
@@ -55,7 +58,8 @@ class HubWebSocketHandlerTest {
         // Real registry + presence over the mocked broker, so relay/session behaviour is exercised.
         HubSessionRegistry registry = new HubSessionRegistry();
         PresenceService presence = new PresenceService(rabbitMqService, registry);
-        handler = new HubWebSocketHandler(rabbitMqService, registry, presence, connectionFactory);
+        CallSignalService calls = new CallSignalService(rabbitMqService, registry);
+        handler = new HubWebSocketHandler(rabbitMqService, registry, presence, calls, connectionFactory);
 
         lenient().when(session.getPrincipal()).thenReturn(principal);
         lenient().when(principal.getName()).thenReturn(userId);
@@ -73,6 +77,7 @@ class HubWebSocketHandlerTest {
     void testAfterConnectionEstablishedBindsUser() throws Exception {
         handler.afterConnectionEstablished(session);
         verify(rabbitMqService, times(1)).bindUserToHubQueue(userId);
+        verify(rabbitMqService, times(1)).bindCallSignals(userId);
     }
 
     @Test
@@ -80,6 +85,43 @@ class HubWebSocketHandlerTest {
         handler.afterConnectionEstablished(session);
         handler.afterConnectionClosed(session, CloseStatus.NORMAL);
         verify(rabbitMqService, times(1)).unbindUserFromHubQueue(userId);
+        verify(rabbitMqService, times(1)).unbindCallSignals(userId);
+    }
+
+    @Test
+    void testCallSignalIsStampedWithSessionUserAndPublished() throws Exception {
+        handler.afterConnectionEstablished(session);
+        String recipient = UUID.randomUUID().toString();
+        String spoofed = UUID.randomUUID().toString();
+
+        handler.handleTextMessage(session, new TextMessage("""
+            {"type":"call_signal","recipientId":"%s","senderId":"%s","payload":"1.abc"}
+            """.formatted(recipient, spoofed)));
+
+        ArgumentCaptor<String> frame = ArgumentCaptor.forClass(String.class);
+        verify(rabbitMqService).publishCallSignal(eq(recipient), frame.capture());
+        // The sender is the authenticated session user; a client-supplied senderId is ignored.
+        assertTrue(frame.getValue().contains("\"senderId\":\"" + userId + "\""));
+        assertFalse(frame.getValue().contains(spoofed));
+        assertTrue(frame.getValue().contains("\"type\":\"call_signal\""));
+    }
+
+    @Test
+    void testCallDeliveryIsForwardedToRecipientAndAcked() throws Exception {
+        handler.afterConnectionEstablished(session);
+        String frame = "{\"type\":\"call_signal\",\"senderId\":\"%s\",\"payload\":\"1.abc\"}"
+                .formatted(senderId);
+        MessageProperties props = new MessageProperties();
+        props.setReceivedExchange("calls.exchange");
+        props.setReceivedRoutingKey("call." + userId);
+        props.setDeliveryTag(77L);
+
+        handler.onMessage(new Message(frame.getBytes(StandardCharsets.UTF_8), props), channel);
+
+        ArgumentCaptor<TextMessage> wsCaptor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(session).sendMessage(wsCaptor.capture());
+        assertEquals(frame, wsCaptor.getValue().getPayload());
+        verify(channel).basicAck(77L, false);
     }
 
     @Test

@@ -28,6 +28,12 @@ public final class RabbitMqTopology {
     /** Routing-key prefix a watcher Hub binds and events are published to: {@code watch.{userId}}. */
     public static final String WATCH_KEY_PREFIX = "watch.";
 
+    /** Topic exchange carrying ephemeral call signals between Hubs (declared in definitions.json). */
+    public static final String CALLS_EXCHANGE = "calls.exchange";
+
+    /** Routing-key prefix the Hub holding a user binds for that user's call signals: {@code call.{userId}}. */
+    public static final String CALL_KEY_PREFIX = "call.";
+
     private RabbitMqTopology() {
     }
 }

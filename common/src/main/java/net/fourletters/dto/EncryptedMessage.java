@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.UUID;
+import net.fourletters.dto.MessageHint;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
@@ -32,7 +33,8 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   EncryptedMessage.JSON_PROPERTY_RECIPIENT_ID,
   EncryptedMessage.JSON_PROPERTY_SENDER_ID,
   EncryptedMessage.JSON_PROPERTY_PAYLOAD,
-  EncryptedMessage.JSON_PROPERTY_GROUP_ID
+  EncryptedMessage.JSON_PROPERTY_GROUP_ID,
+  EncryptedMessage.JSON_PROPERTY_HINT
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.21.0")
 public class EncryptedMessage {
@@ -55,6 +57,10 @@ public class EncryptedMessage {
   public static final String JSON_PROPERTY_GROUP_ID = "groupId";
   @jakarta.annotation.Nullable
   private UUID groupId;
+
+  public static final String JSON_PROPERTY_HINT = "hint";
+  @jakarta.annotation.Nullable
+  private MessageHint hint;
 
   public EncryptedMessage() {
   }
@@ -184,6 +190,31 @@ public class EncryptedMessage {
     this.groupId = groupId;
   }
 
+  public EncryptedMessage hint(@jakarta.annotation.Nullable MessageHint hint) {
+    
+    this.hint = hint;
+    return this;
+  }
+
+  /**
+   * Get hint
+   * @return hint
+   */
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_HINT, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public MessageHint getHint() {
+    return hint;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_HINT, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setHint(@jakarta.annotation.Nullable MessageHint hint) {
+    this.hint = hint;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -198,12 +229,13 @@ public class EncryptedMessage {
         Objects.equals(this.recipientId, encryptedMessage.recipientId) &&
         Objects.equals(this.senderId, encryptedMessage.senderId) &&
         Objects.equals(this.payload, encryptedMessage.payload) &&
-        Objects.equals(this.groupId, encryptedMessage.groupId);
+        Objects.equals(this.groupId, encryptedMessage.groupId) &&
+        Objects.equals(this.hint, encryptedMessage.hint);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(messageId, recipientId, senderId, payload, groupId);
+    return Objects.hash(messageId, recipientId, senderId, payload, groupId, hint);
   }
 
   @Override
@@ -215,6 +247,7 @@ public class EncryptedMessage {
     sb.append("    senderId: ").append(toIndentedString(senderId)).append("\n");
     sb.append("    payload: ").append(toIndentedString(payload)).append("\n");
     sb.append("    groupId: ").append(toIndentedString(groupId)).append("\n");
+    sb.append("    hint: ").append(toIndentedString(hint)).append("\n");
     sb.append("}");
     return sb.toString();
   }

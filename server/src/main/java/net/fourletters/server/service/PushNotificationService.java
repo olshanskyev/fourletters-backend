@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import net.fourletters.dto.MessageHint;
 import net.fourletters.dto.PushSubscription;
 import net.fourletters.server.model.Group;
 import net.fourletters.server.model.PushSubscriptionEntity;
@@ -15,6 +16,7 @@ import net.fourletters.configuration.ProxyResolver;
 import nl.martijndwars.webpush.Encoding;
 import nl.martijndwars.webpush.Notification;
 import nl.martijndwars.webpush.PushService;
+import nl.martijndwars.webpush.Urgency;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -48,6 +50,9 @@ public class PushNotificationService {
     private static final Logger logger = LoggerFactory.getLogger(PushNotificationService.class);
 
     private static final String GENERIC_BODY = "New message";
+    private static final String CALL_BODY = "Incoming call";
+    /** A call push is useless once the callee would ignore the offer, so it expires with it. */
+    private static final int CALL_PUSH_TTL_SECONDS = 60;
     private static final String DEFAULT_ICON = "/web-app-manifest-192x192.png";
     /** Monochrome silhouette shown as the Android status-bar (small) icon. */
     private static final String BADGE_ICON = "/notification-badge.svg";
@@ -70,8 +75,8 @@ public class PushNotificationService {
     /**
      * Keys {@code messageId:recipientId} that have already been pushed. A message can be a push
      * candidate twice — once when its live publish is returned unroutable (recipient offline), and
-     * again when it later reaches the cold tier (flush-time backstop) — so this set collapses them
-     * into one push. It is self-cleaning: the cold-tier call removes the key.
+     * again from the hot-tier backstop (no receipt within the push backstop delay) — so this set
+     * collapses them into one push. Cleared when the message leaves the hot tier (receipt or flush).
      */
     private final Set<String> pushedMessages = ConcurrentHashMap.newKeySet();
 
@@ -187,42 +192,35 @@ public class PushNotificationService {
 
     /**
      * Wake an offline recipient with a metadata-only push. No-op when push is disabled, the
-     * recipient has no subscription, a push for this same message was already sent, or a push was
-     * already sent to this recipient within the debounce window.
+     * recipient has no subscription, or a push for this same message was already sent. A chat
+     * message is additionally debounced per recipient; a call offer never is.
      *
      * @param recipientId the offline user to wake
      * @param senderId    the message sender (for the notification title/avatar and click routing)
      * @param groupId     the group id for a group message, or {@code null} for a 1:1 message
      * @param messageId   the message being notified, used to dedup the accept-time push and the
-     *                    flush-time backstop for the same message; may be {@code null}
-     * @param coldTier    {@code true} when called from the cold-tier flush backstop (the message is
-     *                    leaving the hot tier), {@code false} for the accept-time live-return path
+     *                    hot-tier backstop for the same message; may be {@code null}
+     * @param hint        the sender's delivery hint; {@link MessageHint#CALL} sends an incoming-call push
      */
     public void notifyRecipient(UUID recipientId, UUID senderId, UUID groupId, UUID messageId,
-                                boolean coldTier) {
+                                MessageHint hint) {
         if (pushService == null || recipientId == null) {
             return;
         }
         // Never push the same message to the same recipient twice: the live-return path and the
-        // cold-tier backstop can both fire for one message, and this set collapses them into one.
-        String key = messageId == null ? null : messageId + ":" + recipientId;
-        boolean alreadyPushed = key != null && !pushedMessages.add(key);
-        if (coldTier && key != null) {
-            // Flush is terminal: the copy is leaving the hot tier, so this was its last chance to
-            // be pushed. Forget the marker (the other exit — a receipt — clears it via clearPushed).
-            pushedMessages.remove(key);
-        }
-        if (alreadyPushed) {
+        // hot-tier backstop can both fire for one message, and this set collapses them into one.
+        if (messageId != null && !pushedMessages.add(messageId + ":" + recipientId)) {
             return;
         }
-        if (!passesDebounce(recipientId)) {
+        boolean call = hint == MessageHint.CALL;
+        if (!call && !passesDebounce(recipientId)) {
             return;
         }
-        sender.execute(() -> send(recipientId, senderId, groupId));
+        sender.execute(() -> send(recipientId, senderId, groupId, call));
     }
 
     /**
-     * Forget the per-message push marker when a message leaves the hot tier via a receipt
+     * Forget the per-message push marker when a message leaves the hot tier (receipt or flush).
      */
     public void clearPushed(UUID messageId, UUID recipientId) {
         if (messageId != null && recipientId != null) {
@@ -244,15 +242,24 @@ public class PushNotificationService {
         return allow.get();
     }
 
-    private void send(UUID recipientId, UUID senderId, UUID groupId) {
+    private void send(UUID recipientId, UUID senderId, UUID groupId, boolean call) {
         try {
             Optional<PushSubscriptionEntity> subscription = subscriptionRepository.findById(recipientId);
             if (subscription.isEmpty()) {
                 return;
             }
             PushSubscriptionEntity sub = subscription.get();
-            byte[] payload = buildPayload(recipientId, senderId, groupId).getBytes(StandardCharsets.UTF_8);
-            Notification notification = new Notification(sub.getEndpoint(), sub.getP256dh(), sub.getAuth(), payload);
+            byte[] payload = buildPayload(recipientId, senderId, groupId, call).getBytes(StandardCharsets.UTF_8);
+            Notification notification = call
+                    ? Notification.builder()
+                        .endpoint(sub.getEndpoint())
+                        .userPublicKey(sub.getP256dh())
+                        .userAuth(sub.getAuth())
+                        .payload(payload)
+                        .ttl(CALL_PUSH_TTL_SECONDS)
+                        .urgency(Urgency.HIGH)
+                        .build()
+                    : new Notification(sub.getEndpoint(), sub.getP256dh(), sub.getAuth(), payload);
 
             // Use our proxy-aware client with the library-prepared POST (encryption + VAPID headers).
             HttpPost httpPost = pushService.preparePost(notification, Encoding.AES128GCM);
@@ -299,7 +306,7 @@ public class PushNotificationService {
      * service worker shows automatically and surfaces via {@code SwPush.notificationClicks}. The
      * click carries {@code senderId}/{@code groupId} so the client resolves its local conversation.
      */
-    private String buildPayload(UUID recipientId, UUID senderId, UUID groupId) {
+    private String buildPayload(UUID recipientId, UUID senderId, UUID groupId, boolean call) {
         User sender = senderId != null ? usersRepository.findById(senderId).orElse(null) : null;
         String title = resolveTitle(sender, groupId);
         String icon = resolveIcon(sender);
@@ -307,7 +314,7 @@ public class PushNotificationService {
         ObjectNode root = objectMapper.createObjectNode();
         ObjectNode notification = root.putObject("notification");
         notification.put("title", title);
-        notification.put("body", GENERIC_BODY);
+        notification.put("body", call ? CALL_BODY : GENERIC_BODY);
         notification.put("icon", icon);
         // Android renders the small status-bar icon monochrome (alpha only);
         notification.put("badge", BADGE_ICON);
@@ -317,9 +324,13 @@ public class PushNotificationService {
         if (image != null) {
             notification.put("image", image);
         }
-        // Collapse repeated wake-ups for the same recipient into one visible notification.
-        notification.put("tag", "fourletters-" + recipientId);
+        // Collapse repeated wake-ups for the same recipient into one visible notification; a call
+        // has its own tag so it never merges with message notifications, and stays until acted on.
+        notification.put("tag", (call ? "fourletters-call-" : "fourletters-") + recipientId);
         notification.put("renotify", true);
+        if (call) {
+            notification.put("requireInteraction", true);
+        }
 
         ObjectNode data = notification.putObject("data");
         if (senderId != null) {
