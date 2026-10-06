@@ -13,6 +13,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -130,18 +131,115 @@ class PresenceServiceTest {
     // --- Typing ------------------------------------------------------------------
 
     @Test
-    void typingPublishesTypingFrame() {
+    void typingPublishesOnlyToRecipient() {
         String user = uuid();
+        String recipient = uuid();
 
-        presence.typing(user);
+        presence.typing(user, recipient);
 
         ArgumentCaptor<String> frame = ArgumentCaptor.forClass(String.class);
-        verify(rabbitMqService).publishToWatch(eq(user), frame.capture());
+        verify(rabbitMqService).publishTypingUser(eq(recipient), frame.capture());
         assertTrue(frame.getValue().contains("\"type\":\"typing\""));
         assertTrue(frame.getValue().contains(user));
+        assertFalse(frame.getValue().contains("groupId"));
+        verify(rabbitMqService, never()).publishToWatch(anyString(), anyString());
+    }
+
+    @Test
+    void typingWithoutValidRecipientIsIgnored() {
+        String user = uuid();
+
+        presence.typing(user, null);
+        presence.typing(user, "");
+        presence.typing(user, "not-a-uuid");
+        presence.typing(user, "1-1-1-1-1");
+
+        verify(rabbitMqService, never()).publishTypingUser(anyString(), anyString());
+        verify(rabbitMqService, never()).publishToWatch(anyString(), anyString());
     }
 
     // --- Inbound presence.exchange deliveries ------------------------------------
+
+    @Test
+    void typingGroupWithoutValidGroupIsIgnored() {
+        String user = uuid();
+        presence.typingGroup(user, null);
+        presence.typingGroup(user, "bad-id");
+        presence.typingGroup(user, "1-1-1-1-1");
+        verify(rabbitMqService, never()).publishTypingGroup(anyString(), anyString());
+    }
+
+    @Test
+    void groupBindingIsSharedAndReleasedByLastWatcher() {
+        String group = uuid();
+        String first = uuid();
+        String second = uuid();
+        presence.subscribeGroupTyping(first, group);
+        presence.subscribeGroupTyping(first, group);
+        presence.subscribeGroupTyping(second, group);
+        verify(rabbitMqService, times(1)).bindTypingGroup(group);
+
+        presence.unsubscribeGroupTyping(first, group);
+        verify(rabbitMqService, never()).unbindTypingGroup(group);
+        presence.unsubscribeGroupTyping(second, group);
+        verify(rabbitMqService).unbindTypingGroup(group);
+    }
+
+    @Test
+    void groupEventsReachOnlyWatchersAndDisconnectCleansUp() {
+        String group = uuid();
+        String otherGroup = uuid();
+        String watcher = uuid();
+        String other = uuid();
+        presence.subscribeGroupTyping(watcher, group);
+        presence.subscribeGroupTyping(other, otherGroup);
+
+        presence.onGroupTypingEvent(group, "BODY");
+        verify(registry).sendToUser(watcher, "BODY");
+        verify(registry, never()).sendToUser(other, "BODY");
+
+        presence.onUserOffline(watcher);
+        verify(rabbitMqService).unbindTypingGroup(group);
+        presence.onGroupTypingEvent(group, "AFTER");
+        verify(registry, never()).sendToUser(watcher, "AFTER");
+        verify(rabbitMqService, never()).unbindTypingGroup(otherGroup);
+    }
+
+    @Test
+    void sharedWatchMapsKeepPresenceAndGroupRoutesSeparate() {
+        String target = uuid();
+        String presenceWatcher = uuid();
+        String groupWatcher = uuid();
+        presence.subscribe(presenceWatcher, target);
+        presence.subscribeGroupTyping(groupWatcher, target);
+
+        presence.onWatchEvent(target, "PRESENCE");
+        presence.onGroupTypingEvent(target, "TYPING");
+        verify(registry).sendToUser(presenceWatcher, "PRESENCE");
+        verify(registry).sendToUser(groupWatcher, "TYPING");
+        verify(registry, never()).sendToUser(groupWatcher, "PRESENCE");
+        verify(registry, never()).sendToUser(presenceWatcher, "TYPING");
+
+        presence.subscribeGroupTyping(presenceWatcher, target);
+        presence.onUserOffline(presenceWatcher);
+        verify(rabbitMqService).unbindWatch(target);
+        verify(rabbitMqService, never()).unbindTypingGroup(target);
+        presence.onGroupTypingEvent(target, "AFTER");
+        verify(registry).sendToUser(groupWatcher, "AFTER");
+        verify(registry, never()).sendToUser(presenceWatcher, "AFTER");
+
+        presence.onUserOffline(groupWatcher);
+        verify(rabbitMqService).unbindTypingGroup(target);
+    }
+
+    @Test
+    void invalidGroupSubscriptionsAreIgnored() {
+        presence.subscribeGroupTyping(uuid(), null);
+        presence.subscribeGroupTyping(uuid(), "bad-id");
+        presence.unsubscribeGroupTyping(uuid(), "1-1-1-1-1");
+        verify(rabbitMqService, never()).bindTypingGroup(anyString());
+        verify(rabbitMqService, never()).unbindTypingGroup(anyString());
+    }
 
     @Test
     void onWatchEventForwardsBodyToWatchers() {

@@ -78,6 +78,7 @@ class HubWebSocketHandlerTest {
         handler.afterConnectionEstablished(session);
         verify(rabbitMqService, times(1)).bindUserToHubQueue(userId);
         verify(rabbitMqService, times(1)).bindCallSignals(userId);
+        verify(rabbitMqService, times(1)).bindTypingUser(userId);
     }
 
     @Test
@@ -86,6 +87,79 @@ class HubWebSocketHandlerTest {
         handler.afterConnectionClosed(session, CloseStatus.NORMAL);
         verify(rabbitMqService, times(1)).unbindUserFromHubQueue(userId);
         verify(rabbitMqService, times(1)).unbindCallSignals(userId);
+        verify(rabbitMqService, times(1)).unbindTypingUser(userId);
+    }
+
+    @Test
+    void testDirectTypingUsesAuthenticatedSenderAndRecipientRoute() {
+        handler.handleTextMessage(session, new TextMessage("""
+            {"type":"typing","recipientId":"%s","userId":"%s"}
+            """.formatted(senderId, messageId)));
+
+        ArgumentCaptor<String> frame = ArgumentCaptor.forClass(String.class);
+        verify(rabbitMqService).publishTypingUser(eq(senderId), frame.capture());
+        assertTrue(frame.getValue().contains("\"userId\":\"" + userId + "\""));
+        assertFalse(frame.getValue().contains(messageId));
+        verify(rabbitMqService, never()).publishToWatch(anyString(), anyString());
+    }
+
+    @Test
+    void testGroupTypingUsesAuthenticatedSenderAndGroupRoute() {
+        handler.handleTextMessage(session, new TextMessage("""
+            {"type":"typing","groupId":"%s","userId":"%s"}
+            """.formatted(messageId, senderId)));
+
+        ArgumentCaptor<String> frame = ArgumentCaptor.forClass(String.class);
+        verify(rabbitMqService).publishTypingGroup(eq(messageId), frame.capture());
+        assertTrue(frame.getValue().contains("\"type\":\"typing\""));
+        assertTrue(frame.getValue().contains("\"userId\":\"" + userId + "\""));
+        assertTrue(frame.getValue().contains("\"groupId\":\"" + messageId + "\""));
+        assertFalse(frame.getValue().contains(senderId));
+        verify(rabbitMqService, never()).publishTypingUser(anyString(), anyString());
+        verify(rabbitMqService, never()).publishToWatch(anyString(), anyString());
+    }
+
+    @Test
+    void testTypingWithMissingOrBothDestinationsIsIgnored() {
+        handler.handleTextMessage(session, new TextMessage("{\"type\":\"typing\"}"));
+        handler.handleTextMessage(session, new TextMessage("""
+            {"type":"typing","recipientId":"%s","groupId":"%s"}
+            """.formatted(senderId, messageId)));
+
+        verify(rabbitMqService, never()).publishTypingUser(anyString(), anyString());
+        verify(rabbitMqService, never()).publishTypingGroup(anyString(), anyString());
+        verify(rabbitMqService, never()).publishToWatch(anyString(), anyString());
+    }
+
+    @Test
+    void testDirectTypingDeliveryIsForwardedAndAcked() throws Exception {
+        handler.afterConnectionEstablished(session);
+        String frame = "{\"type\":\"typing\",\"userId\":\"%s\"}".formatted(senderId);
+        MessageProperties props = new MessageProperties();
+        props.setReceivedExchange("presence.exchange");
+        props.setReceivedRoutingKey("typing.user." + userId);
+        props.setDeliveryTag(78L);
+
+        handler.onMessage(new Message(frame.getBytes(StandardCharsets.UTF_8), props), channel);
+
+        ArgumentCaptor<TextMessage> sent = ArgumentCaptor.forClass(TextMessage.class);
+        verify(session).sendMessage(sent.capture());
+        assertEquals(frame, sent.getValue().getPayload());
+        verify(channel).basicAck(78L, false);
+    }
+
+    @Test
+    void testDirectTypingForAnotherRecipientIsNotForwarded() throws Exception {
+        handler.afterConnectionEstablished(session);
+        MessageProperties props = new MessageProperties();
+        props.setReceivedExchange("presence.exchange");
+        props.setReceivedRoutingKey("typing.user." + senderId);
+        props.setDeliveryTag(79L);
+
+        handler.onMessage(new Message("{}".getBytes(StandardCharsets.UTF_8), props), channel);
+
+        verify(session, never()).sendMessage(any());
+        verify(channel).basicAck(79L, false);
     }
 
     @Test

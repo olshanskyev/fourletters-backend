@@ -25,20 +25,19 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * WS push: an authenticated user is typing. Direct events are delivered only to the recipient; group events carry groupId and are delivered to group typing watchers. No persistence or replay.
+ * Client -&gt; Hub: watch typing in a group.
  */
 @JsonPropertyOrder({
-  TypingEvent.JSON_PROPERTY_TYPE,
-  TypingEvent.JSON_PROPERTY_USER_ID,
-  TypingEvent.JSON_PROPERTY_GROUP_ID
+  TypingGroupSubscribeCommand.JSON_PROPERTY_TYPE,
+  TypingGroupSubscribeCommand.JSON_PROPERTY_GROUP_ID
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.21.0")
-public class TypingEvent {
+public class TypingGroupSubscribeCommand {
   /**
    * Gets or Sets type
    */
   public enum TypeEnum {
-    TYPING(String.valueOf("typing"));
+    TYPING_GROUP_SUBSCRIBE(String.valueOf("typing_group_subscribe"));
 
     private String value;
 
@@ -71,18 +70,14 @@ public class TypingEvent {
   @jakarta.annotation.Nonnull
   private TypeEnum type;
 
-  public static final String JSON_PROPERTY_USER_ID = "userId";
-  @jakarta.annotation.Nonnull
-  private UUID userId;
-
   public static final String JSON_PROPERTY_GROUP_ID = "groupId";
-  @jakarta.annotation.Nullable
+  @jakarta.annotation.Nonnull
   private UUID groupId;
 
-  public TypingEvent() {
+  public TypingGroupSubscribeCommand() {
   }
 
-  public TypingEvent type(@jakarta.annotation.Nonnull TypeEnum type) {
+  public TypingGroupSubscribeCommand type(@jakarta.annotation.Nonnull TypeEnum type) {
     
     this.type = type;
     return this;
@@ -107,53 +102,28 @@ public class TypingEvent {
     this.type = type;
   }
 
-  public TypingEvent userId(@jakarta.annotation.Nonnull UUID userId) {
-    
-    this.userId = userId;
-    return this;
-  }
-
-  /**
-   * The sender who is typing, derived from the authenticated session.
-   * @return userId
-   */
-  @jakarta.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_USER_ID, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-
-  public UUID getUserId() {
-    return userId;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_USER_ID, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setUserId(@jakarta.annotation.Nonnull UUID userId) {
-    this.userId = userId;
-  }
-
-  public TypingEvent groupId(@jakarta.annotation.Nullable UUID groupId) {
+  public TypingGroupSubscribeCommand groupId(@jakarta.annotation.Nonnull UUID groupId) {
     
     this.groupId = groupId;
     return this;
   }
 
   /**
-   * The group being typed in. Absent for direct typing.
+   * Get groupId
    * @return groupId
    */
-  @jakarta.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_GROUP_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @jakarta.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_GROUP_ID, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
 
   public UUID getGroupId() {
     return groupId;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_GROUP_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setGroupId(@jakarta.annotation.Nullable UUID groupId) {
+  @JsonProperty(value = JSON_PROPERTY_GROUP_ID, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setGroupId(@jakarta.annotation.Nonnull UUID groupId) {
     this.groupId = groupId;
   }
 
@@ -166,23 +136,21 @@ public class TypingEvent {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    TypingEvent typingEvent = (TypingEvent) o;
-    return Objects.equals(this.type, typingEvent.type) &&
-        Objects.equals(this.userId, typingEvent.userId) &&
-        Objects.equals(this.groupId, typingEvent.groupId);
+    TypingGroupSubscribeCommand typingGroupSubscribeCommand = (TypingGroupSubscribeCommand) o;
+    return Objects.equals(this.type, typingGroupSubscribeCommand.type) &&
+        Objects.equals(this.groupId, typingGroupSubscribeCommand.groupId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(type, userId, groupId);
+    return Objects.hash(type, groupId);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class TypingEvent {\n");
+    sb.append("class TypingGroupSubscribeCommand {\n");
     sb.append("    type: ").append(toIndentedString(type)).append("\n");
-    sb.append("    userId: ").append(toIndentedString(userId)).append("\n");
     sb.append("    groupId: ").append(toIndentedString(groupId)).append("\n");
     sb.append("}");
     return sb.toString();

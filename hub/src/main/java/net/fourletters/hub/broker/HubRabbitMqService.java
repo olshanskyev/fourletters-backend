@@ -23,6 +23,8 @@ public class HubRabbitMqService {
     /** A call signal older than this is useless, so the broker discards it. */
     private static final String CALL_SIGNAL_EXPIRATION_MS = "30000";
 
+    private static final String TYPING_EXPIRATION_MS = "3000";
+
     private final AmqpAdmin amqpAdmin;
     private final RabbitTemplate rabbitTemplate;
     private final TopicExchange messagesExchange =
@@ -102,6 +104,23 @@ public class HubRabbitMqService {
         amqpAdmin.removeBinding(presenceBinding(RabbitMqTopology.WATCH_KEY_PREFIX, userId));
     }
 
+    // Typing uses the same exchange and Hub queue, but separate destination routes.
+    public void bindTypingUser(String userId) {
+        amqpAdmin.declareBinding(presenceBinding(RabbitMqTopology.TYPING_USER_KEY_PREFIX, userId));
+    }
+
+    public void unbindTypingUser(String userId) {
+        amqpAdmin.removeBinding(presenceBinding(RabbitMqTopology.TYPING_USER_KEY_PREFIX, userId));
+    }
+
+    public void bindTypingGroup(String groupId) {
+        amqpAdmin.declareBinding(presenceBinding(RabbitMqTopology.TYPING_GROUP_KEY_PREFIX, groupId));
+    }
+
+    public void unbindTypingGroup(String groupId) {
+        amqpAdmin.removeBinding(presenceBinding(RabbitMqTopology.TYPING_GROUP_KEY_PREFIX, groupId));
+    }
+
     private Binding presenceBinding(String keyPrefix, String userId) {
         return BindingBuilder
                 .bind(new Queue(hubQueueName))
@@ -115,6 +134,25 @@ public class HubRabbitMqService {
     public void publishToWatch(String userId, String frameJson) {
         rabbitTemplate.convertAndSend(
                 RabbitMqTopology.PRESENCE_EXCHANGE, RabbitMqTopology.WATCH_KEY_PREFIX + userId, frameJson);
+    }
+
+    public void publishTypingUser(String recipientId, String frameJson) {
+        publishTyping(RabbitMqTopology.TYPING_USER_KEY_PREFIX + recipientId, frameJson);
+    }
+
+    public void publishTypingGroup(String groupId, String frameJson) {
+        publishTyping(RabbitMqTopology.TYPING_GROUP_KEY_PREFIX + groupId, frameJson);
+    }
+
+    /** Typing is transient: do not deliver queued indicators after their display lifetime. */
+    private void publishTyping(String routingKey, String frameJson) {
+        rabbitTemplate.convertAndSend(
+                RabbitMqTopology.PRESENCE_EXCHANGE, routingKey, frameJson,
+                message -> {
+                    message.getMessageProperties().setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
+                    message.getMessageProperties().setExpiration(TYPING_EXPIRATION_MS);
+                    return message;
+                });
     }
 
     /**
