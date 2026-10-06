@@ -182,6 +182,7 @@ public class PresenceService {
     private void addWatch(String watcher, String routingKey) {
         synchronized (lock) {
             if (!watchers.containsKey(routingKey)) {
+                logger.debug("Bind watch {}", routingKey);
                 if (routingKey.startsWith(RabbitMqTopology.WATCH_KEY_PREFIX)) {
                     rabbitMqService.bindWatch(routingKey.substring(RabbitMqTopology.WATCH_KEY_PREFIX.length()));
                 } else {

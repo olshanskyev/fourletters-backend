@@ -101,7 +101,7 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
         rabbitMqService.bindCallSignals(userId);
         rabbitMqService.bindTypingUser(userId);
         presence.onUserOnline(userId);
-        logger.info("Session connected and bound for user: {}", userId);
+        logger.debug("Session connected and bound for user: {}", userId);
     }
 
     @Override
@@ -113,7 +113,7 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
             // after a newer socket replaced it must leave the live bindings alone.
             if (registry.removeIfCurrent(userId, session.getId())) {
                 teardown(userId);
-                logger.info("Session closed and unbound for user: {}", userId);
+                logger.debug("Session closed and unbound for user: {}", userId);
             } else {
                 logger.debug("Stale session closed for user: {}", userId);
             }
