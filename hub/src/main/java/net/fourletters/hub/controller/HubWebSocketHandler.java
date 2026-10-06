@@ -99,6 +99,7 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
         registry.register(userId, session);
         rabbitMqService.bindUserToHubQueue(userId);
         rabbitMqService.bindCallSignals(userId);
+        rabbitMqService.bindTypingUser(userId);
         presence.onUserOnline(userId);
         logger.info("Session connected and bound for user: {}", userId);
     }
@@ -125,6 +126,7 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
         try {
             rabbitMqService.unbindUserFromHubQueue(userId);
             rabbitMqService.unbindCallSignals(userId);
+            rabbitMqService.unbindTypingUser(userId);
         } catch (AmqpApplicationContextClosedException e) {
             logger.debug("Application context is closed. Skipping unbind for user: {}", userId);
         }
@@ -134,7 +136,8 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
     /**
      * The Hub acts on a small set of inbound frames: a {@code ping} liveness probe, the presence
      * control frames ({@code presence_subscribe} / {@code presence_unsubscribe} / {@code typing}),
-     * and {@code call_signal}.
+    * group typing subscriptions ({@code typing_group_subscribe} / {@code typing_group_unsubscribe}),
+    * and {@code call_signal}.
      */
     @Override
     protected void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) {
@@ -158,7 +161,16 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
             case "ping" -> registry.replyToPing(session, userId, PONG_FRAME);
             case "presence_subscribe" -> presence.subscribe(userId, node.path("userId").asText(null));
             case "presence_unsubscribe" -> presence.unsubscribe(userId, node.path("userId").asText(null));
-            case "typing" -> presence.typing(userId);
+            case "typing_group_subscribe" -> presence.subscribeGroupTyping(userId, node.path("groupId").asText(null));
+            case "typing_group_unsubscribe" -> presence.unsubscribeGroupTyping(userId, node.path("groupId").asText(null));
+            case "typing" -> {
+                // Exactly one destination
+                if (node.has("groupId") && !node.has("recipientId")) {
+                    presence.typingGroup(userId, node.path("groupId").asText(null));
+                } else if (node.has("recipientId") && !node.has("groupId")) {
+                    presence.typing(userId, node.path("recipientId").asText(null));
+                }
+            }
             case "call_signal" -> calls.relay(
                     userId, node.path("recipientId").asText(null), node.path("payload").asText(null));
             default -> logger.debug("Ignoring inbound WS frame type {}", type);
@@ -221,7 +233,8 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
     /**
      * Handle a delivery from {@code presence.exchange}: a {@code watch.{id}} event is forwarded to
      * that user's local watchers; a {@code presence.{id}} probe (we own that user) triggers an
-     * online re-announce. Presence deliveries are always acked-and-dropped.
+     * online re-announce; {@code typing.user.{id}} goes only to that recipient.
+     * Presence and typing deliveries are always acked-and-dropped.
      */
     private void handlePresenceDelivery(Message message, Channel channel) throws Exception {
         long deliveryTag = message.getMessageProperties().getDeliveryTag();
@@ -232,6 +245,12 @@ public class HubWebSocketHandler extends TextWebSocketHandler implements Channel
                 presence.onWatchEvent(watched, new String(message.getBody(), StandardCharsets.UTF_8));
             } else if (routingKey != null && routingKey.startsWith(RabbitMqTopology.PRESENCE_KEY_PREFIX)) {
                 presence.onProbe(routingKey.substring(RabbitMqTopology.PRESENCE_KEY_PREFIX.length()));
+            } else if (routingKey != null && routingKey.startsWith(RabbitMqTopology.TYPING_USER_KEY_PREFIX)) {
+                String recipient = routingKey.substring(RabbitMqTopology.TYPING_USER_KEY_PREFIX.length());
+                registry.sendToUser(recipient, new String(message.getBody(), StandardCharsets.UTF_8));
+            } else if (routingKey != null && routingKey.startsWith(RabbitMqTopology.TYPING_GROUP_KEY_PREFIX)) {
+                String groupId = routingKey.substring(RabbitMqTopology.TYPING_GROUP_KEY_PREFIX.length());
+                presence.onGroupTypingEvent(groupId, new String(message.getBody(), StandardCharsets.UTF_8));
             }
         } finally {
             channel.basicAck(deliveryTag, false);

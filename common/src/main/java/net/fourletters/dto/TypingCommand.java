@@ -20,14 +20,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * Client -&gt; Hub: &#39;I am typing in my active chat.&#39; The Hub derives the sender id from the authenticated session and relays it to that user&#39;s watchers.
+ * Client -&gt; Hub: announce typing to exactly one destination: recipientId for a direct chat or groupId for a group. The Hub validates destination exclusivity and derives the sender from authentication.
  */
 @JsonPropertyOrder({
-  TypingCommand.JSON_PROPERTY_TYPE
+  TypingCommand.JSON_PROPERTY_TYPE,
+  TypingCommand.JSON_PROPERTY_RECIPIENT_ID,
+  TypingCommand.JSON_PROPERTY_GROUP_ID
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.21.0")
 public class TypingCommand {
@@ -68,6 +71,14 @@ public class TypingCommand {
   @jakarta.annotation.Nonnull
   private TypeEnum type;
 
+  public static final String JSON_PROPERTY_RECIPIENT_ID = "recipientId";
+  @jakarta.annotation.Nullable
+  private UUID recipientId;
+
+  public static final String JSON_PROPERTY_GROUP_ID = "groupId";
+  @jakarta.annotation.Nullable
+  private UUID groupId;
+
   public TypingCommand() {
   }
 
@@ -96,6 +107,56 @@ public class TypingCommand {
     this.type = type;
   }
 
+  public TypingCommand recipientId(@jakarta.annotation.Nullable UUID recipientId) {
+    
+    this.recipientId = recipientId;
+    return this;
+  }
+
+  /**
+   * Direct recipient; routed to typing.user.&lt;recipientId&gt;.
+   * @return recipientId
+   */
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_RECIPIENT_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public UUID getRecipientId() {
+    return recipientId;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_RECIPIENT_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setRecipientId(@jakarta.annotation.Nullable UUID recipientId) {
+    this.recipientId = recipientId;
+  }
+
+  public TypingCommand groupId(@jakarta.annotation.Nullable UUID groupId) {
+    
+    this.groupId = groupId;
+    return this;
+  }
+
+  /**
+   * Group destination; routed to typing.group.&lt;groupId&gt;.
+   * @return groupId
+   */
+  @jakarta.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_GROUP_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public UUID getGroupId() {
+    return groupId;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_GROUP_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setGroupId(@jakarta.annotation.Nullable UUID groupId) {
+    this.groupId = groupId;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -106,12 +167,14 @@ public class TypingCommand {
       return false;
     }
     TypingCommand typingCommand = (TypingCommand) o;
-    return Objects.equals(this.type, typingCommand.type);
+    return Objects.equals(this.type, typingCommand.type) &&
+        Objects.equals(this.recipientId, typingCommand.recipientId) &&
+        Objects.equals(this.groupId, typingCommand.groupId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(type);
+    return Objects.hash(type, recipientId, groupId);
   }
 
   @Override
@@ -119,6 +182,8 @@ public class TypingCommand {
     StringBuilder sb = new StringBuilder();
     sb.append("class TypingCommand {\n");
     sb.append("    type: ").append(toIndentedString(type)).append("\n");
+    sb.append("    recipientId: ").append(toIndentedString(recipientId)).append("\n");
+    sb.append("    groupId: ").append(toIndentedString(groupId)).append("\n");
     sb.append("}");
     return sb.toString();
   }

@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
 /**
- * Client -&gt; Hub: start receiving a contact&#39;s online/typing state.
+ * Client -&gt; Hub: start receiving a contact&#39;s online/offline state.
  */
 @JsonPropertyOrder({
   PresenceSubscribeCommand.JSON_PROPERTY_TYPE,
