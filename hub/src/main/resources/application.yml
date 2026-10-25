@@ -12,6 +12,9 @@ server:
 spring:
   application:
     name: fourletters-hub
+# Max message payload relayed to clients; sizes the per-session WebSocket send buffer.
+messages:
+  max-payload-bytes: ${MESSAGE_MAX_PAYLOAD_BYTES:4194304}
 
 ---
 spring:
