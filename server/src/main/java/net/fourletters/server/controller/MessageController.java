@@ -11,6 +11,7 @@ import net.fourletters.server.service.InboxService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.fourletters.server.util.SecurityUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,15 +33,15 @@ public class MessageController {
     /** Maximum messages accepted in one /messages/batch call; clients chunk larger resyncs. */
     private static final int MAX_BATCH_SIZE = 100;
 
-    /**
-     * Maximum length (chars) of an opaque message payload.
-     */
-    private static final int MAX_PAYLOAD_LENGTH = 10 * 1024 * 1024;
+    /** Maximum length (chars) of an opaque message payload. */
+    private final int maxPayloadLength;
 
     private final InboxService inboxService;
 
-    public MessageController(InboxService inboxService) {
+    public MessageController(InboxService inboxService,
+                             @Value("${messages.max-payload-bytes:4194304}") int maxPayloadLength) {
         this.inboxService = inboxService;
+        this.maxPayloadLength = maxPayloadLength;
     }
 
     @PostMapping(value = "/messages", produces = "application/json")
@@ -49,7 +50,7 @@ public class MessageController {
         if (senderId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        if (message.getPayload().isBlank() || message.getPayload().length() > MAX_PAYLOAD_LENGTH) {
+        if (message.getPayload().isBlank() || message.getPayload().length() > maxPayloadLength) {
             return ResponseEntity.badRequest().build();
         }
         // A message targets exactly one destination: a 1:1 recipient or a group (never both/neither).
@@ -72,7 +73,7 @@ public class MessageController {
             return ResponseEntity.badRequest().build();
         }
         for (EncryptedMessage message : messages) {
-            if (message.getPayload().isBlank() || message.getPayload().length() > MAX_PAYLOAD_LENGTH) {
+            if (message.getPayload().isBlank() || message.getPayload().length() > maxPayloadLength) {
                 return ResponseEntity.badRequest().build();
             }
         }

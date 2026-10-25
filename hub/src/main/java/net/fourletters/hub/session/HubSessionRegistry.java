@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.PingMessage;
@@ -26,18 +28,32 @@ public class HubSessionRegistry {
 
     /** How long a single write may block before the session is considered stuck. */
     private static final int SEND_TIME_LIMIT_MS = 10_000;
+    /** Default message payload cap; mirrors the Server's messages.max-payload-bytes. */
+    private static final int DEFAULT_MAX_PAYLOAD_BYTES = 4 * 1024 * 1024;
+    /** Room for the frame envelope and small control frames queued behind a max-size message. */
+    private static final int SEND_BUFFER_HEADROOM_BYTES = 512 * 1024;
+
     /** Max bytes allowed to buffer per session before it is treated as too slow. */
-    private static final int SEND_BUFFER_LIMIT_BYTES = 512 * 1024;
+    private final int sendBufferLimitBytes;
 
     /** userId -> its current open WebSocket session on this Hub. */
     private final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
     /** WebSocket session id -> epoch millis of the last pong received. */
     private final Map<String, Long> lastPongTimes = new ConcurrentHashMap<>();
 
+    public HubSessionRegistry() {
+        this(DEFAULT_MAX_PAYLOAD_BYTES);
+    }
+
+    @Autowired
+    public HubSessionRegistry(@Value("${messages.max-payload-bytes:4194304}") int maxPayloadBytes) {
+        this.sendBufferLimitBytes = maxPayloadBytes + SEND_BUFFER_HEADROOM_BYTES;
+    }
+
     /** Register a new session (wrapped for concurrency-safe writes); last-wins over any previous one. */
     public void register(String userId, WebSocketSession rawSession) {
         WebSocketSession concurrent =
-                new ConcurrentWebSocketSessionDecorator(rawSession, SEND_TIME_LIMIT_MS, SEND_BUFFER_LIMIT_BYTES);
+                new ConcurrentWebSocketSessionDecorator(rawSession, SEND_TIME_LIMIT_MS, sendBufferLimitBytes);
         sessions.put(userId, concurrent);
         lastPongTimes.put(rawSession.getId(), System.currentTimeMillis());
     }

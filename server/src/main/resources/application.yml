@@ -31,6 +31,9 @@ spring:
     # Surface unroutable (mandatory) publishes back to the Server so receipts for an offline
     # sender can be retained for /inbox pull; routable receipts (online sender) are not stored.
     publisher-returns: true
+# Max opaque message payload (chars == bytes, base64/JSON is ASCII). Keep in sync with the Hub and GUI.
+messages:
+  max-payload-bytes: ${MESSAGE_MAX_PAYLOAD_BYTES:4194304}
 # Web Push (VAPID) — wakes an offline recipient. push is disabled (no-op) when the key pair is absent.
 push:
   vapid:
