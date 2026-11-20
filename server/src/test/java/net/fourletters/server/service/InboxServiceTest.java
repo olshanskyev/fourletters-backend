@@ -286,6 +286,24 @@ class InboxServiceTest {
     }
 
     @Test
+    void groupMessageKeepsReactionHint() {
+        UUID groupId = UUID.randomUUID();
+        when(groupService.groupRoster(groupId)).thenReturn(List.of(sender, recipient));
+        EncryptedMessage m = new EncryptedMessage();
+        m.setMessageId(UUID.randomUUID());
+        m.setGroupId(groupId);
+        m.setPayload("0.{}");
+        m.setHint(MessageHint.REACTION);
+
+        service.accept(m, sender);
+        service.flushExpired();
+
+        verify(rabbitMqService).publishMessage(any(), eq(MessageHint.REACTION));
+        verify(pushNotificationService).notifyRecipient(
+                eq(recipient), eq(sender), eq(groupId), eq(m.getMessageId()), eq(MessageHint.REACTION));
+    }
+
+    @Test
     void rejectsBackstopDelayLongerThanHoldWindow() {
         assertThatThrownBy(() -> newService(30L, 31L, 5L)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> newService(30L, 10L, 31L)).isInstanceOf(IllegalStateException.class);

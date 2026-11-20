@@ -22,13 +22,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
- * Plaintext delivery hint set by the sender. The Server uses it only to choose the push notification wording and timing: &#39;message&#39; &#x3D; a chat message (default when omitted); &#39;call&#39; &#x3D; a call offer.
+ * Plaintext delivery hint set by the sender. The Server uses it only to choose the push notification wording and timing: &#39;message&#39; &#x3D; a chat message (default when omitted); &#39;call&#39; &#x3D; a call offer; &#39;reaction&#39; &#x3D; a message reaction.
  */
 public enum MessageHint {
   
   MESSAGE("message"),
   
-  CALL("call");
+  CALL("call"),
+  
+  REACTION("reaction");
 
   private String value;
 

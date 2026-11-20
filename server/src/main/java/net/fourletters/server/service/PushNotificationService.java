@@ -51,6 +51,7 @@ public class PushNotificationService {
 
     private static final String GENERIC_BODY = "New message";
     private static final String CALL_BODY = "Incoming call";
+    private static final String REACTION_BODY = "New reaction";
     /** A call push is useless once the callee would ignore the offer, so it expires with it. */
     private static final int CALL_PUSH_TTL_SECONDS = 60;
     private static final String DEFAULT_ICON = "/web-app-manifest-192x192.png";
@@ -216,7 +217,7 @@ public class PushNotificationService {
         if (!call && !passesDebounce(recipientId)) {
             return;
         }
-        sender.execute(() -> send(recipientId, senderId, groupId, call));
+        sender.execute(() -> send(recipientId, senderId, groupId, hint));
     }
 
     /**
@@ -242,14 +243,15 @@ public class PushNotificationService {
         return allow.get();
     }
 
-    private void send(UUID recipientId, UUID senderId, UUID groupId, boolean call) {
+    private void send(UUID recipientId, UUID senderId, UUID groupId, MessageHint hint) {
         try {
             Optional<PushSubscriptionEntity> subscription = subscriptionRepository.findById(recipientId);
             if (subscription.isEmpty()) {
                 return;
             }
             PushSubscriptionEntity sub = subscription.get();
-            byte[] payload = buildPayload(recipientId, senderId, groupId, call).getBytes(StandardCharsets.UTF_8);
+            boolean call = hint == MessageHint.CALL;
+            byte[] payload = buildPayload(recipientId, senderId, groupId, hint).getBytes(StandardCharsets.UTF_8);
             Notification notification = call
                     ? Notification.builder()
                         .endpoint(sub.getEndpoint())
@@ -306,7 +308,8 @@ public class PushNotificationService {
      * service worker shows automatically and surfaces via {@code SwPush.notificationClicks}. The
      * click carries {@code senderId}/{@code groupId} so the client resolves its local conversation.
      */
-    private String buildPayload(UUID recipientId, UUID senderId, UUID groupId, boolean call) {
+    private String buildPayload(UUID recipientId, UUID senderId, UUID groupId, MessageHint hint) {
+        boolean call = hint == MessageHint.CALL;
         User sender = senderId != null ? usersRepository.findById(senderId).orElse(null) : null;
         String title = resolveTitle(sender, groupId);
         String icon = resolveIcon(sender);
@@ -314,7 +317,7 @@ public class PushNotificationService {
         ObjectNode root = objectMapper.createObjectNode();
         ObjectNode notification = root.putObject("notification");
         notification.put("title", title);
-        notification.put("body", call ? CALL_BODY : GENERIC_BODY);
+        notification.put("body", resolveBody(hint));
         notification.put("icon", icon);
         // Android renders the small status-bar icon monochrome (alpha only);
         notification.put("badge", BADGE_ICON);
@@ -353,6 +356,13 @@ public class PushNotificationService {
         }
 
         return root.toString();
+    }
+
+    private static String resolveBody(MessageHint hint) {
+        if (hint == MessageHint.CALL) {
+            return CALL_BODY;
+        }
+        return hint == MessageHint.REACTION ? REACTION_BODY : GENERIC_BODY;
     }
 
     /** Group name for a group message; otherwise the sender's display name. */
