@@ -166,11 +166,13 @@ public class InboxService {
             return;
         }
 
-        // Calls are 1:1 only, so a group message is always pushed as a plain message.
-        message.setHint(null);
+        // Calls are 1:1 only, so a group message is pushed as a plain message or a reaction.
+        if (message.getHint() != MessageHint.REACTION) {
+            message.setHint(null);
+        }
         tier.store(message, recipients);
         for (UUID recipientId : recipients) {
-            rabbitMqService.publishMessage(publishCopy(message, recipientId), null);
+            rabbitMqService.publishMessage(publishCopy(message, recipientId), message.getHint());
         }
         logger.debug("Accepted group message {} for {} recipients (single copy)",
                 message.getMessageId(), recipients.size());
