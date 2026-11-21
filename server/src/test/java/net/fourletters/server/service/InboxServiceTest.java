@@ -21,6 +21,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.lenient;
@@ -74,6 +75,11 @@ class InboxServiceTest {
         return m;
     }
 
+    /** Matches the held copy of {@code m}, as accepted from {@link #sender}. */
+    private EncryptedMessage held(EncryptedMessage m) {
+        return argThat(x -> m.getMessageId().equals(x.getMessageId()) && sender.equals(x.getSenderId()));
+    }
+
     @Test
     void confirmedWithinWindowCostsZeroDbWrites() {
         EncryptedMessage m = newMessage();
@@ -113,8 +119,7 @@ class InboxServiceTest {
 
         // Unacknowledged past the backstop delay, so the recipient is woken with a best-effort push
         // (backstop for a silently-dropped Hub binding), and the marker is released on flush.
-        verify(pushNotificationService)
-                .notifyRecipient(eq(recipient), eq(sender), any(), eq(m.getMessageId()), isNull());
+        verify(pushNotificationService).notifyRecipient(eq(recipient), held(m), isNull());
         verify(pushNotificationService).clearPushed(m.getMessageId(), recipient);
 
         // After eviction the hot tier no longer returns it (only the cold tier would).
@@ -215,8 +220,7 @@ class InboxServiceTest {
         service.flushExpired();
         service.flushExpired();
 
-        verify(pushNotificationService, times(1))
-                .notifyRecipient(eq(recipient), eq(sender), any(), eq(m.getMessageId()), isNull());
+        verify(pushNotificationService, times(1)).notifyRecipient(eq(recipient), held(m), isNull());
         // Still within the hold window: nothing is written to the cold tier yet.
         verify(repository, never()).save(any());
     }
@@ -234,7 +238,7 @@ class InboxServiceTest {
 
         service.flushExpired();
 
-        verify(pushNotificationService, never()).notifyRecipient(any(), any(), any(), any(), any());
+        verify(pushNotificationService, never()).notifyRecipient(any(), any(), any());
     }
 
     @Test
@@ -249,9 +253,8 @@ class InboxServiceTest {
         service.flushExpired();
 
         verify(pushNotificationService)
-                .notifyRecipient(eq(recipient), eq(sender), any(), eq(offer.getMessageId()), eq(MessageHint.CALL));
-        verify(pushNotificationService, never())
-                .notifyRecipient(any(), any(), any(), eq(chat.getMessageId()), any());
+                .notifyRecipient(eq(recipient), held(offer), eq(MessageHint.CALL));
+        verify(pushNotificationService, never()).notifyRecipient(any(), held(chat), any());
     }
 
     @Test
@@ -281,26 +284,25 @@ class InboxServiceTest {
         service.flushExpired();
 
         verify(rabbitMqService).publishMessage(any(), isNull());
-        verify(pushNotificationService)
-                .notifyRecipient(eq(recipient), eq(sender), eq(groupId), eq(m.getMessageId()), isNull());
+        verify(pushNotificationService).notifyRecipient(eq(recipient), held(m), isNull());
     }
 
     @Test
-    void groupMessageKeepsReactionHint() {
+    void groupReactionKeepsItsHintForThePush() {
         UUID groupId = UUID.randomUUID();
         when(groupService.groupRoster(groupId)).thenReturn(List.of(sender, recipient));
         EncryptedMessage m = new EncryptedMessage();
         m.setMessageId(UUID.randomUUID());
         m.setGroupId(groupId);
-        m.setPayload("0.{}");
+        m.setPayload("0.{\"notifyId\":\"" + recipient + "\"}");
         m.setHint(MessageHint.REACTION);
 
         service.accept(m, sender);
         service.flushExpired();
 
         verify(rabbitMqService).publishMessage(any(), eq(MessageHint.REACTION));
-        verify(pushNotificationService).notifyRecipient(
-                eq(recipient), eq(sender), eq(groupId), eq(m.getMessageId()), eq(MessageHint.REACTION));
+        verify(pushNotificationService)
+                .notifyRecipient(eq(recipient), held(m), eq(MessageHint.REACTION));
     }
 
     @Test

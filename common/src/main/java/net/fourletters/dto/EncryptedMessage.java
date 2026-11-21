@@ -147,7 +147,7 @@ public class EncryptedMessage {
   }
 
   /**
-   * E2E encrypted ciphertext. Format &#39;&lt;sessionType&gt;.&lt;bodyBase64&gt;&#39;. sessionType is 1 (WhisperMessage, established pairwise session) or 3 (PreKeyWhisperMessage, establishes the pairwise session) for a 1:1 payload, or 4 (SenderKeyMessage) for a group payload encrypted once with the sender&#39;s per-group Sender Key. sessionType 0 is a plaintext reaction: &#39;0.{\&quot;kind\&quot;:\&quot;reaction\&quot;,\&quot;target\&quot;:&lt;messageId&gt;,\&quot;emoji\&quot;:&lt;emoji or &#39;&#39;&gt;,\&quot;ts\&quot;:&lt;epochMs&gt;}&#39;.
+   * E2E encrypted ciphertext. Format &#39;&lt;sessionType&gt;.&lt;bodyBase64&gt;&#39;. sessionType is 1 (WhisperMessage, established pairwise session) or 3 (PreKeyWhisperMessage, establishes the pairwise session) for a 1:1 payload, or 4 (SenderKeyMessage) for a group payload encrypted once with the sender&#39;s per-group Sender Key. sessionType 0 is a plaintext reaction: &#39;0.{\&quot;kind\&quot;:\&quot;reaction\&quot;,\&quot;target\&quot;:&lt;messageId&gt;,\&quot;emoji\&quot;:&lt;emoji or &#39;&#39;&gt;,\&quot;ts\&quot;:&lt;epochMs&gt;,\&quot;notifyId\&quot;:&lt;target author, the only member pushed; omitted for an own message&gt;}&#39;.
    * @return payload
    */
   @jakarta.annotation.Nonnull

@@ -123,8 +123,7 @@ public class ServerRabbitMqService {
                     returned.getRoutingKey().substring(RabbitMqTopology.ROUTING_KEY_PREFIX.length()));
             Object hintHeader = returned.getMessage().getMessageProperties().getHeaders().get(HINT_HEADER);
             MessageHint hint = hintHeader == null ? null : MessageHint.fromValue(hintHeader.toString());
-            pushNotificationService.notifyRecipient(
-                    recipientId, message.getSenderId(), message.getGroupId(), message.getMessageId(), hint);
+            pushNotificationService.notifyRecipient(recipientId, message, hint);
             logger.debug("Recipient {} offline; triggered push for message {}",
                     recipientId, message.getMessageId());
         } catch (Exception e) {
