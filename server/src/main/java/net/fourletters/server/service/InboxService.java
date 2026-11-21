@@ -104,8 +104,7 @@ public class InboxService {
     private void notifyPending(EncryptedMessage message, Set<UUID> pending) {
         try {
             for (UUID recipientId : pending) {
-                pushNotificationService.notifyRecipient(recipientId, message.getSenderId(),
-                        message.getGroupId(), message.getMessageId(), message.getHint());
+                pushNotificationService.notifyRecipient(recipientId, message, message.getHint());
             }
         } catch (RuntimeException e) {
             logger.warn("Failed to fire push backstop for message {}", message.getMessageId(), e);

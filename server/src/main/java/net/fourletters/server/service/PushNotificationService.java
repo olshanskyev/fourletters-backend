@@ -1,9 +1,13 @@
 package net.fourletters.server.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import net.fourletters.dto.EncryptedMessage;
 import net.fourletters.dto.MessageHint;
 import net.fourletters.dto.PushSubscription;
 import net.fourletters.server.model.Group;
@@ -51,7 +55,10 @@ public class PushNotificationService {
 
     private static final String GENERIC_BODY = "New message";
     private static final String CALL_BODY = "Incoming call";
-    private static final String REACTION_BODY = "New reaction";
+    private static final String REACTION_PAYLOAD_PREFIX = "0.";
+    /** Keep in sync with the GUI REACTION_EMOJIS; only these may appear in a push body. */
+    private static final Set<String> REACTION_EMOJIS = Set.of(
+            "👍", "❤️", "😂", "😮", "😢", "🙏", "👎", "🔥", "🎉", "👏");
     /** A call push is useless once the callee would ignore the offer, so it expires with it. */
     private static final int CALL_PUSH_TTL_SECONDS = 60;
     private static final String DEFAULT_ICON = "/web-app-manifest-192x192.png";
@@ -194,22 +201,25 @@ public class PushNotificationService {
     /**
      * Wake an offline recipient with a metadata-only push. No-op when push is disabled, the
      * recipient has no subscription, or a push for this same message was already sent. A chat
-     * message is additionally debounced per recipient; a call offer never is.
+     * message is additionally debounced per recipient; a call offer never is. A reaction is pushed
+     * only to the target message's author (payload {@code notifyId}), showing the emoji.
      *
      * @param recipientId the offline user to wake
-     * @param senderId    the message sender (for the notification title/avatar and click routing)
-     * @param groupId     the group id for a group message, or {@code null} for a 1:1 message
-     * @param messageId   the message being notified, used to dedup the accept-time push and the
-     *                    hot-tier backstop for the same message; may be {@code null}
-     * @param hint        the sender's delivery hint; {@link MessageHint#CALL} sends an incoming-call push
+     * @param message     the held or returned message (sender, group and id drive title, routing
+     *                    and dedup of the accept-time push and the hot-tier backstop)
+     * @param hint        the sender's delivery hint, passed separately as it is not relayed on copies
      */
-    public void notifyRecipient(UUID recipientId, UUID senderId, UUID groupId, UUID messageId,
-                                MessageHint hint) {
+    public void notifyRecipient(UUID recipientId, EncryptedMessage message, MessageHint hint) {
         if (pushService == null || recipientId == null) {
+            return;
+        }
+        String body = pushBody(recipientId, message, hint);
+        if (body == null) {
             return;
         }
         // Never push the same message to the same recipient twice: the live-return path and the
         // hot-tier backstop can both fire for one message, and this set collapses them into one.
+        UUID messageId = message.getMessageId();
         if (messageId != null && !pushedMessages.add(messageId + ":" + recipientId)) {
             return;
         }
@@ -217,7 +227,34 @@ public class PushNotificationService {
         if (!call && !passesDebounce(recipientId)) {
             return;
         }
-        sender.execute(() -> send(recipientId, senderId, groupId, hint));
+        sender.execute(() -> send(recipientId, message.getSenderId(), message.getGroupId(), hint, body));
+    }
+
+    /** The notification body, or {@code null} if this recipient must not be pushed. */
+    private String pushBody(UUID recipientId, EncryptedMessage message, MessageHint hint) {
+        if (hint == MessageHint.CALL) {
+            return CALL_BODY;
+        }
+        if (hint != MessageHint.REACTION) {
+            return GENERIC_BODY;
+        }
+        // Only the author of the reacted message, and never for a removal (empty emoji).
+        JsonNode reaction = reactionPayload(message.getPayload());
+        String emoji = reaction.path("emoji").asText("");
+        boolean toAuthor = recipientId.toString().equals(reaction.path("notifyId").asText(null));
+        return toAuthor && REACTION_EMOJIS.contains(emoji) ? "Reacted " + emoji + " to your message" : null;
+    }
+
+    /** The parsed plaintext reaction payload, or an empty node if it is not one. */
+    private JsonNode reactionPayload(String payload) {
+        if (payload == null || !payload.startsWith(REACTION_PAYLOAD_PREFIX)) {
+            return MissingNode.getInstance();
+        }
+        try {
+            return objectMapper.readTree(payload.substring(REACTION_PAYLOAD_PREFIX.length()));
+        } catch (JsonProcessingException e) {
+            return MissingNode.getInstance();
+        }
     }
 
     /**
@@ -243,7 +280,7 @@ public class PushNotificationService {
         return allow.get();
     }
 
-    private void send(UUID recipientId, UUID senderId, UUID groupId, MessageHint hint) {
+    private void send(UUID recipientId, UUID senderId, UUID groupId, MessageHint hint, String body) {
         try {
             Optional<PushSubscriptionEntity> subscription = subscriptionRepository.findById(recipientId);
             if (subscription.isEmpty()) {
@@ -251,7 +288,8 @@ public class PushNotificationService {
             }
             PushSubscriptionEntity sub = subscription.get();
             boolean call = hint == MessageHint.CALL;
-            byte[] payload = buildPayload(recipientId, senderId, groupId, hint).getBytes(StandardCharsets.UTF_8);
+            byte[] payload = buildPayload(recipientId, senderId, groupId, call, body)
+                    .getBytes(StandardCharsets.UTF_8);
             Notification notification = call
                     ? Notification.builder()
                         .endpoint(sub.getEndpoint())
@@ -308,8 +346,8 @@ public class PushNotificationService {
      * service worker shows automatically and surfaces via {@code SwPush.notificationClicks}. The
      * click carries {@code senderId}/{@code groupId} so the client resolves its local conversation.
      */
-    private String buildPayload(UUID recipientId, UUID senderId, UUID groupId, MessageHint hint) {
-        boolean call = hint == MessageHint.CALL;
+    private String buildPayload(UUID recipientId, UUID senderId, UUID groupId, boolean call,
+                                String body) {
         User sender = senderId != null ? usersRepository.findById(senderId).orElse(null) : null;
         String title = resolveTitle(sender, groupId);
         String icon = resolveIcon(sender);
@@ -317,7 +355,7 @@ public class PushNotificationService {
         ObjectNode root = objectMapper.createObjectNode();
         ObjectNode notification = root.putObject("notification");
         notification.put("title", title);
-        notification.put("body", resolveBody(hint));
+        notification.put("body", body);
         notification.put("icon", icon);
         // Android renders the small status-bar icon monochrome (alpha only);
         notification.put("badge", BADGE_ICON);
@@ -356,13 +394,6 @@ public class PushNotificationService {
         }
 
         return root.toString();
-    }
-
-    private static String resolveBody(MessageHint hint) {
-        if (hint == MessageHint.CALL) {
-            return CALL_BODY;
-        }
-        return hint == MessageHint.REACTION ? REACTION_BODY : GENERIC_BODY;
     }
 
     /** Group name for a group message; otherwise the sender's display name. */
